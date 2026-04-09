@@ -2,14 +2,14 @@
 // Proxies calls to Slash Golf (RapidAPI) using the stored API key.
 // Query params: path=/tournaments&tournId=014&year=2026
 
-import { kv } from '@vercel/kv';
-
-const KEY = 'golf_league_state';
+import { sql, ensureTable } from '../../lib/db';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
 
-  const state = await kv.get(KEY);
+  await ensureTable();
+  const rows = await sql`SELECT state FROM league_state WHERE id = 1`;
+  const state = rows[0]?.state;
   if (!state?.apiKey) return res.status(401).json({ error: 'No API key configured.' });
 
   const ALLOWED_PATHS = ['tournaments', 'leaderboards', 'schedules', 'rankings'];

@@ -1,12 +1,10 @@
 // pages/api/state.js
-// Shared league state persisted in Vercel KV.
+// Shared league state persisted in Neon Postgres.
 // GET  /api/state          → returns current state
 // POST /api/state          → body: { action, payload } → mutates + returns new state
 // DELETE /api/state        → resets league (admin use)
 
-import { kv } from '@vercel/kv';
-
-const KEY = 'golf_league_state';
+import { sql, ensureTable } from '../../lib/db';
 
 const DEFAULT_STATE = {
   configured: false,
@@ -25,12 +23,18 @@ const DEFAULT_STATE = {
 };
 
 async function getState() {
-  const s = await kv.get(KEY);
+  await ensureTable();
+  const rows = await sql`SELECT state FROM league_state WHERE id = 1`;
+  const s = rows[0]?.state;
   return s ? { ...DEFAULT_STATE, ...s } : { ...DEFAULT_STATE };
 }
 
 async function setState(s) {
-  await kv.set(KEY, s);
+  await ensureTable();
+  await sql`
+    INSERT INTO league_state (id, state) VALUES (1, ${JSON.stringify(s)}::jsonb)
+    ON CONFLICT (id) DO UPDATE SET state = ${JSON.stringify(s)}::jsonb
+  `;
   return s;
 }
 
@@ -54,7 +58,8 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'DELETE') {
-    await kv.del(KEY);
+    await ensureTable();
+    await sql`DELETE FROM league_state WHERE id = 1`;
     return res.status(200).json({ ok: true });
   }
 
