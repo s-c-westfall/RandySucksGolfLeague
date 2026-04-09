@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 
 const PICKS_PER_DRAFTER = 3;
@@ -83,23 +83,11 @@ export default function Home() {
   const [newDrafter, setNewDrafter] = useState('');
 
   const pollingRef = useRef(null);
+  const refreshRef = useRef(null);
 
   const [loadError, setLoadError] = useState(false);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [secretInput, setSecretInput] = useState('');
-
-  // initial load
-  useEffect(() => {
-    stateGet().then(setS).catch(() => setLoadError(true));
-  }, []);
-
-  // auto-refresh scores every 2 min when draft complete
-  useEffect(() => {
-    if (s?.draftComplete) {
-      pollingRef.current = setInterval(refreshScores, 120_000);
-    }
-    return () => clearInterval(pollingRef.current);
-  }, [s?.draftComplete, refreshScores]);
 
   const wrap = async (fn) => {
     setBusy(true); setErr('');
@@ -110,6 +98,19 @@ export default function Home() {
     }
     finally { setBusy(false); }
   };
+
+  // initial load
+  useEffect(() => {
+    stateGet().then(setS).catch(() => setLoadError(true));
+  }, []);
+
+  // auto-refresh scores every 2 min when draft complete
+  useEffect(() => {
+    if (s?.draftComplete) {
+      pollingRef.current = setInterval(() => refreshRef.current?.(), 120_000);
+    }
+    return () => clearInterval(pollingRef.current);
+  }, [s?.draftComplete]);
 
   // ── handlers ──
   const loadTournament = () => wrap(async () => {
@@ -168,10 +169,13 @@ export default function Home() {
     if (data.draftComplete) { setTab('scores'); await refreshScoresFrom(data); }
   });
 
-  const refreshScores = useCallback(() => wrap(async () => {
+  const refreshScores = () => wrap(async () => {
     const fresh = await stateGet();
     await refreshScoresFrom(fresh);
-  }), []);
+  });
+
+  // Keep ref current so polling interval always calls latest version
+  refreshRef.current = refreshScores;
 
   const refreshScoresFrom = async (currentState) => {
     try {
