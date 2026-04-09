@@ -27,6 +27,12 @@ function scoreClass(n) {
   return 'even';
 }
 
+// ── Auth ──────────────────────────────────────────────────────────────────────
+function getSecret() {
+  if (typeof window === 'undefined') return '';
+  return sessionStorage.getItem('league_secret') || '';
+}
+
 // ── API calls ─────────────────────────────────────────────────────────────────
 async function apiGet(path, params = {}) {
   const qs = new URLSearchParams({ path, ...params }).toString();
@@ -38,15 +44,26 @@ async function apiGet(path, params = {}) {
 async function statePost(action, payload = {}) {
   const res = await fetch('/api/state', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-league-secret': getSecret() },
     body: JSON.stringify({ action, payload }),
   });
+  if (res.status === 401) throw new Error('AUTH_REQUIRED');
   if (!res.ok) throw new Error(`State API ${res.status}`);
   return res.json();
 }
 
 async function stateGet() {
   const res = await fetch('/api/state');
+  if (!res.ok) throw new Error(`State API ${res.status}`);
+  return res.json();
+}
+
+async function stateDelete() {
+  const res = await fetch('/api/state', {
+    method: 'DELETE',
+    headers: { 'x-league-secret': getSecret() },
+  });
+  if (res.status === 401) throw new Error('AUTH_REQUIRED');
   if (!res.ok) throw new Error(`State API ${res.status}`);
   return res.json();
 }
@@ -67,9 +84,13 @@ export default function Home() {
 
   const pollingRef = useRef(null);
 
+  const [loadError, setLoadError] = useState(false);
+  const [needsAuth, setNeedsAuth] = useState(false);
+  const [secretInput, setSecretInput] = useState('');
+
   // initial load
   useEffect(() => {
-    stateGet().then(setS).catch(console.error);
+    stateGet().then(setS).catch(() => setLoadError(true));
   }, []);
 
   // auto-refresh scores every 2 min when draft complete
@@ -78,12 +99,15 @@ export default function Home() {
       pollingRef.current = setInterval(refreshScores, 120_000);
     }
     return () => clearInterval(pollingRef.current);
-  }, [s?.draftComplete]);
+  }, [s?.draftComplete, refreshScores]);
 
   const wrap = async (fn) => {
     setBusy(true); setErr('');
     try { await fn(); }
-    catch (e) { setErr(e.message); }
+    catch (e) {
+      if (e.message === 'AUTH_REQUIRED') { setNeedsAuth(true); return; }
+      setErr(e.message);
+    }
     finally { setBusy(false); }
   };
 
@@ -128,15 +152,26 @@ export default function Home() {
     const drafted = new Set(s.picks.map(p => p.playerId));
     if (drafted.has(playerId)) return;
     const pick = { pickIndex: s.currentPickIndex, drafterIndex: s.draftOrder[s.currentPickIndex], playerId, name };
-    const u = await statePost('makePick', { pick });
-    setS(u); setSearchQ('');
-    if (u.draftComplete) { setTab('scores'); refreshScoresFrom(u); }
+    const res = await fetch('/api/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-league-secret': getSecret() },
+      body: JSON.stringify({ action: 'makePick', payload: { pick } }),
+    });
+    if (res.status === 401) throw new Error('AUTH_REQUIRED');
+    const data = await res.json();
+    if (res.status === 409 && data.state) {
+      setS(data.state);
+      throw new Error(data.error);
+    }
+    if (!res.ok) throw new Error(data.error || `State API ${res.status}`);
+    setS(data); setSearchQ('');
+    if (data.draftComplete) { setTab('scores'); await refreshScoresFrom(data); }
   });
 
-  const refreshScores = () => wrap(async () => {
+  const refreshScores = useCallback(() => wrap(async () => {
     const fresh = await stateGet();
-    refreshScoresFrom(fresh);
-  });
+    await refreshScoresFrom(fresh);
+  }), []);
 
   const refreshScoresFrom = async (currentState) => {
     try {
@@ -158,12 +193,12 @@ export default function Home() {
     } catch (e) { console.error('Score refresh failed:', e); }
   };
 
-  const reset = async () => {
+  const reset = () => wrap(async () => {
     if (!confirm('Reset all league data? This cannot be undone.')) return;
-    await fetch('/api/state', { method: 'DELETE' });
+    await stateDelete();
     setS(await stateGet());
     setTab('draft');
-  };
+  });
 
   // ── derived ──
   const drafted = new Set((s?.picks || []).map(p => p.playerId));
@@ -174,6 +209,40 @@ export default function Home() {
   const teams = s?.draftComplete ? buildTeams(s) : [];
 
   // ── render ──
+  const handleLogin = async () => {
+    setBusy(true); setErr('');
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret: secretInput }),
+      });
+      if (!res.ok) { setErr('Wrong password.'); return; }
+      sessionStorage.setItem('league_secret', secretInput);
+      setNeedsAuth(false);
+      setSecretInput('');
+    } finally { setBusy(false); }
+  };
+
+  if (needsAuth) return (
+    <div className="loading">
+      <h2>League Password</h2>
+      <p>Enter the league password to make changes.</p>
+      <div className="row-gap" style={{marginTop:12}}>
+        <input type="password" value={secretInput} onChange={e => setSecretInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleLogin()} placeholder="Password..." />
+        <button className="btn" onClick={handleLogin} disabled={busy}>Enter</button>
+      </div>
+      {err && <div className="error">{err}</div>}
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="loading">
+      <p>Failed to connect to the server.</p>
+      <button className="btn" onClick={() => { setLoadError(false); stateGet().then(setS).catch(() => setLoadError(true)); }}>Retry</button>
+    </div>
+  );
   if (!s) return <div className="loading">Loading...</div>;
 
   const showSetup = !s.configured || s.drafters.length === 0 || !s.draftOrder?.length;

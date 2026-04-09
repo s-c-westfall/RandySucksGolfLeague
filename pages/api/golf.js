@@ -12,8 +12,10 @@ export default async function handler(req, res) {
   const state = await kv.get(KEY);
   if (!state?.apiKey) return res.status(401).json({ error: 'No API key configured.' });
 
+  const ALLOWED_PATHS = ['tournaments', 'leaderboards', 'schedules', 'rankings'];
   const { path, ...params } = req.query;
   if (!path) return res.status(400).json({ error: 'Missing path param' });
+  if (!ALLOWED_PATHS.includes(path)) return res.status(400).json({ error: `Invalid path: ${path}` });
 
   const qs = new URLSearchParams(params).toString();
   const url = `https://live-golf-data.p.rapidapi.com/${path}${qs ? '?' + qs : ''}`;

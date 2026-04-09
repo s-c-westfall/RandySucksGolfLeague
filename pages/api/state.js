@@ -34,7 +34,19 @@ async function setState(s) {
   return s;
 }
 
+function checkAuth(req) {
+  const expected = process.env.LEAGUE_SECRET;
+  if (!expected) return true; // auth disabled
+  const token = req.headers['x-league-secret'] || '';
+  return token === expected;
+}
+
 export default async function handler(req, res) {
+  // Mutations require auth when LEAGUE_SECRET is set
+  if ((req.method === 'POST' || req.method === 'DELETE') && !checkAuth(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
   if (req.method === 'GET') {
     const state = await getState();
     // Never expose the API key to the client
@@ -70,7 +82,7 @@ export default async function handler(req, res) {
       case 'setDrafters': {
         const updated = { ...state, drafters: payload.drafters };
         await setState(updated);
-        return res.status(200).json(updated);
+        return res.status(200).json({ ...updated, apiKey: '••••••••' });
       }
 
       case 'startDraft': {
@@ -82,11 +94,17 @@ export default async function handler(req, res) {
           draftOrder: payload.draftOrder,
         };
         await setState(updated);
-        return res.status(200).json(updated);
+        return res.status(200).json({ ...updated, apiKey: '••••••••' });
       }
 
       case 'makePick': {
         if (state.draftComplete) return res.status(409).json({ error: 'Draft complete' });
+        // Optimistic lock: client must send the expected pick index
+        if (payload.pick.pickIndex !== state.currentPickIndex) {
+          // Re-read and return current state so client can sync
+          const current = await getState();
+          return res.status(409).json({ error: 'Pick conflict — someone else picked. Refreshing.', state: { ...current, apiKey: '••••••••' } });
+        }
         const newPicks = [...state.picks];
         newPicks[state.currentPickIndex] = payload.pick;
         const nextIndex = state.currentPickIndex + 1;
