@@ -327,8 +327,9 @@ input::placeholder { color: var(--text-light); }
 .team-name { flex: 1; font-weight: 500; font-size: 0.9rem; }
 .team-total {
   font-family: 'Playfair Display', serif;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   letter-spacing: -0.02em;
+  font-weight: 700;
 }
 .team-total.under { color: #5cb85c; }
 .team-total.over { color: var(--cut); }
