@@ -370,11 +370,8 @@ export default function Home() {
             sc = sc === "E" ? 0 : parseInt(sc) || null;
           return sc;
         });
-        const thru = p.roundComplete
-          ? "F"
-          : p.currentHole
-            ? `${p.currentHole}`
-            : "–";
+        const hole = typeof p.currentHole === 'number' ? p.currentHole : (parseInt(p.currentHole) || null);
+        const thru = p.roundComplete ? "F" : hole ? `${hole}` : "–";
         scores[p.playerId] = {
           total,
           rounds,
@@ -864,7 +861,7 @@ export default function Home() {
                                 {g.cut
                                   ? g.status.toUpperCase()
                                   : g.thru !== "–"
-                                    ? `T${g.thru}`
+                                    ? `Thru ${g.thru}`
                                     : ""}
                               </span>
                               <span
