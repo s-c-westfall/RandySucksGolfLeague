@@ -469,6 +469,7 @@ export default function Home() {
 
       <header>
         <div className="header-right">
+          {s.tournamentName}
           {myName && <span className="badge dim">{myName}</span>}
           {s.lastRefreshed && (
             <span className="badge dim">
