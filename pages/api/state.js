@@ -85,6 +85,17 @@ export default async function handler(req, res) {
         return res.status(200).json(updated);
       }
 
+      case 'addDrafter': {
+        if (state.draftOrder.length > 0) return res.status(400).json({ error: 'Draft already started.' });
+        if (payload.creatorName !== state.creator) return res.status(403).json({ error: 'Only the league creator can add drafters.' });
+        const addName = (payload.name || '').trim();
+        if (!addName) return res.status(400).json({ error: 'Name is required.' });
+        if (state.drafters.includes(addName)) return res.status(409).json({ error: 'That name is already taken.' });
+        const addUpdated = { ...state, drafters: [...state.drafters, addName] };
+        await setState(addUpdated);
+        return res.status(200).json(addUpdated);
+      }
+
       case 'joinDraft': {
         if (!state.configured) return res.status(400).json({ error: 'No tournament configured yet.' });
         if (state.draftOrder.length > 0) return res.status(400).json({ error: 'Draft already started.' });
@@ -131,7 +142,7 @@ export default async function handler(req, res) {
         // Validate the pick is from the correct drafter
         const expectedDrafterIndex = state.draftOrder[state.currentPickIndex];
         const expectedName = state.drafters[expectedDrafterIndex];
-        if (payload.drafterName !== expectedName) {
+        if (payload.drafterName !== expectedName && payload.drafterName !== state.creator) {
           return res.status(403).json({ error: `It is ${expectedName}'s turn, not yours.` });
         }
         const newPicks = [...state.picks];

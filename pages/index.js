@@ -105,6 +105,7 @@ export default function Home() {
 
   // lobby join
   const [joinName, setJoinName] = useState('');
+  const [addDrafterName, setAddDrafterName] = useState('');
 
   const pollingRef = useRef(null);
   const refreshRef = useRef(null);
@@ -223,6 +224,14 @@ export default function Home() {
     const u = await statePost('leaveDraft', { name: myName });
     clearMyName();
     setMyNameState('');
+    setS(u);
+  });
+
+  const addDrafter = () => wrap(async () => {
+    const name = addDrafterName.trim();
+    if (!name) throw new Error('Enter a name.');
+    const u = await statePost('addDrafter', { name, creatorName: myName });
+    setAddDrafterName('');
     setS(u);
   });
 
@@ -438,6 +447,18 @@ export default function Home() {
                 </div>
               )}
 
+              {isCreator && (
+                <div className="field" style={{marginTop:16}}>
+                  <label>Add Drafter</label>
+                  <div className="row-gap">
+                    <input value={addDrafterName} onChange={e => setAddDrafterName(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && addDrafter()}
+                      placeholder="Drafter name..." />
+                    <button className="btn" onClick={addDrafter} disabled={busy}>Add</button>
+                  </div>
+                </div>
+              )}
+
               {isCreator && s.drafters.length >= 2 && (
                 <button className="btn" style={{marginTop:16}} onClick={startDraft} disabled={busy}>
                   Start Snake Draft ({s.drafters.length} drafters · {PICKS_PER_DRAFTER} picks each)
@@ -468,9 +489,9 @@ export default function Home() {
             {/* DRAFT TAB */}
             {tab === 'draft' && (
               <div>
-                {inDraft && isMyTurn && (
+                {inDraft && (isMyTurn || isCreator) && (
                   <div className="panel search-panel">
-                    <h3>Your Pick! Pick {s.currentPickIndex + 1} of {s.draftOrder.length}</h3>
+                    <h3>{isMyTurn ? 'Your Pick!' : `Picking for ${currentDrafterName}`} — Pick {s.currentPickIndex + 1} of {s.draftOrder.length}</h3>
                     <div className="row-gap" style={{marginBottom:10}}>
                       <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Search player..." />
                     </div>
@@ -487,7 +508,7 @@ export default function Home() {
                   </div>
                 )}
 
-                {inDraft && !isMyTurn && (
+                {inDraft && !isMyTurn && !isCreator && (
                   <div className="panel">
                     <h3>Pick {s.currentPickIndex + 1} of {s.draftOrder.length}</h3>
                     <div className="empty-state">Waiting for {currentDrafterName} to pick...</div>
