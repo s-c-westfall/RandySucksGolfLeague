@@ -136,7 +136,10 @@ export default function Home() {
   // initial load
   useEffect(() => {
     stateGet()
-      .then(setS)
+      .then((data) => {
+        setS(data);
+        if (data.draftComplete) setTab("scores");
+      })
       .catch(() => setLoadError(true));
     setMyNameState(getMyName());
   }, []);
