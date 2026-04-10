@@ -173,7 +173,7 @@ export default function Home() {
   const fetchSchedule = async () => {
     setLoadingSchedule(true); setErr('');
     try {
-      const data = await apiGet('schedules', { year: CURRENT_YEAR });
+      const data = await apiGet('schedule', { year: CURRENT_YEAR });
       const list = data?.schedule || data?.schedules || (Array.isArray(data) ? data : []);
       if (!list.length) throw new Error('No schedule found for this year.');
       setSchedule(list);
@@ -187,7 +187,7 @@ export default function Home() {
   const loadTournament = () => wrap(async () => {
     if (!selectedTournId || !creatorName.trim()) throw new Error('Select a tournament and enter your name.');
     const selectedTourn = schedule?.find(t => (t.tournId || t.id) === selectedTournId);
-    const data = await apiGet('tournaments', { tournId: selectedTournId, year: CURRENT_YEAR });
+    const data = await apiGet('tournament', { tournId: selectedTournId, year: CURRENT_YEAR });
     if (!data?.players) throw new Error('No player data — check tournament selection.');
     const field = data.players
       .filter(p => p.status !== 'wd')
@@ -259,7 +259,7 @@ export default function Home() {
 
   const refreshScoresFrom = async (currentState) => {
     try {
-      const data = await apiGet('leaderboards', { tournId: currentState.tournId, year: currentState.year });
+      const data = await apiGet('leaderboard', { tournId: currentState.tournId, year: currentState.year });
       if (!data?.leaderboard) return;
       const scores = {};
       for (const p of data.leaderboard) {

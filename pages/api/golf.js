@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   const apiKey = process.env.GOLF_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'GOLF_API_KEY not configured on server.' });
 
-  const ALLOWED_PATHS = ['tournaments', 'leaderboards', 'schedules', 'rankings'];
+  const ALLOWED_PATHS = ['tournament', 'leaderboard', 'schedule', 'stats', 'organizations', 'players', 'scorecard', 'points', 'earnings'];
   const { path, ...params } = req.query;
   if (!path) return res.status(400).json({ error: 'Missing path param' });
   if (!ALLOWED_PATHS.includes(path)) return res.status(400).json({ error: `Invalid path: ${path}` });
