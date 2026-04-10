@@ -1,16 +1,12 @@
 // pages/api/golf.js
-// Proxies calls to Slash Golf (RapidAPI) using the stored API key.
+// Proxies calls to Slash Golf (RapidAPI) using GOLF_API_KEY env var.
 // Query params: path=/tournaments&tournId=014&year=2026
-
-import { sql, ensureTable } from '../../lib/db';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
 
-  await ensureTable();
-  const rows = await sql`SELECT state FROM league_state WHERE id = 1`;
-  const state = rows[0]?.state;
-  if (!state?.apiKey) return res.status(401).json({ error: 'No API key configured.' });
+  const apiKey = process.env.GOLF_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'GOLF_API_KEY not configured on server.' });
 
   const ALLOWED_PATHS = ['tournaments', 'leaderboards', 'schedules', 'rankings'];
   const { path, ...params } = req.query;
@@ -23,7 +19,7 @@ export default async function handler(req, res) {
   try {
     const upstream = await fetch(url, {
       headers: {
-        'x-rapidapi-key': state.apiKey,
+        'x-rapidapi-key': apiKey,
         'x-rapidapi-host': 'live-golf-data.p.rapidapi.com',
       },
     });

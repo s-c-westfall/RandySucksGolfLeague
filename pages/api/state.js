@@ -8,12 +8,12 @@ import { sql, ensureTable } from '../../lib/db';
 
 const DEFAULT_STATE = {
   configured: false,
-  apiKey: '',
   tournId: '',
   year: '',
   tournamentName: '',
   field: [],
   drafters: [],
+  creator: null,
   picks: [],
   draftOrder: [],
   currentPickIndex: 0,
@@ -53,8 +53,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const state = await getState();
-    // Never expose the API key to the client
-    return res.status(200).json({ ...state, apiKey: '••••••••' });
+    return res.status(200).json(state);
   }
 
   if (req.method === 'DELETE') {
@@ -70,27 +69,47 @@ export default async function handler(req, res) {
     switch (action) {
 
       case 'configure': {
-        // Store config including real API key server-side only
+        const creator = (payload.creator || '').trim();
+        if (!creator) return res.status(400).json({ error: 'Creator name is required.' });
         const updated = {
           ...state,
           configured: true,
-          apiKey: payload.apiKey,
           tournId: payload.tournId,
           year: payload.year,
           tournamentName: payload.tournamentName,
           field: payload.field,
+          creator,
+          drafters: [creator],
         };
         await setState(updated);
-        return res.status(200).json({ ...updated, apiKey: '••••••••' });
+        return res.status(200).json(updated);
       }
 
-      case 'setDrafters': {
-        const updated = { ...state, drafters: payload.drafters };
+      case 'joinDraft': {
+        if (!state.configured) return res.status(400).json({ error: 'No tournament configured yet.' });
+        if (state.draftOrder.length > 0) return res.status(400).json({ error: 'Draft already started.' });
+        const name = (payload.name || '').trim();
+        if (!name) return res.status(400).json({ error: 'Name is required.' });
+        if (state.drafters.includes(name)) return res.status(409).json({ error: 'That name is already taken.' });
+        const updated = { ...state, drafters: [...state.drafters, name] };
         await setState(updated);
-        return res.status(200).json({ ...updated, apiKey: '••••••••' });
+        return res.status(200).json(updated);
+      }
+
+      case 'leaveDraft': {
+        if (state.draftOrder.length > 0) return res.status(400).json({ error: 'Draft already started.' });
+        const name = (payload.name || '').trim();
+        if (name === state.creator) return res.status(400).json({ error: 'Creator cannot leave. Use Reset instead.' });
+        const updated = { ...state, drafters: state.drafters.filter(d => d !== name) };
+        await setState(updated);
+        return res.status(200).json(updated);
       }
 
       case 'startDraft': {
+        if (payload.creatorName !== state.creator) {
+          return res.status(403).json({ error: 'Only the league creator can start the draft.' });
+        }
+        if (state.drafters.length < 2) return res.status(400).json({ error: 'Need at least 2 drafters.' });
         const updated = {
           ...state,
           picks: [],
@@ -99,16 +118,21 @@ export default async function handler(req, res) {
           draftOrder: payload.draftOrder,
         };
         await setState(updated);
-        return res.status(200).json({ ...updated, apiKey: '••••••••' });
+        return res.status(200).json(updated);
       }
 
       case 'makePick': {
         if (state.draftComplete) return res.status(409).json({ error: 'Draft complete' });
         // Optimistic lock: client must send the expected pick index
         if (payload.pick.pickIndex !== state.currentPickIndex) {
-          // Re-read and return current state so client can sync
           const current = await getState();
-          return res.status(409).json({ error: 'Pick conflict — someone else picked. Refreshing.', state: { ...current, apiKey: '••••••••' } });
+          return res.status(409).json({ error: 'Pick conflict — someone else picked. Refreshing.', state: current });
+        }
+        // Validate the pick is from the correct drafter
+        const expectedDrafterIndex = state.draftOrder[state.currentPickIndex];
+        const expectedName = state.drafters[expectedDrafterIndex];
+        if (payload.drafterName !== expectedName) {
+          return res.status(403).json({ error: `It is ${expectedName}'s turn, not yours.` });
         }
         const newPicks = [...state.picks];
         newPicks[state.currentPickIndex] = payload.pick;
@@ -121,7 +145,7 @@ export default async function handler(req, res) {
           draftComplete: complete,
         };
         await setState(updated);
-        return res.status(200).json({ ...updated, apiKey: '••••••••' });
+        return res.status(200).json(updated);
       }
 
       case 'updateScores': {
@@ -131,7 +155,7 @@ export default async function handler(req, res) {
           lastRefreshed: new Date().toISOString(),
         };
         await setState(updated);
-        return res.status(200).json({ ...updated, apiKey: '••••••••' });
+        return res.status(200).json(updated);
       }
 
       default:

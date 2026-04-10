@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 
 const PICKS_PER_DRAFTER = 3;
+const CURRENT_YEAR = new Date().getFullYear().toString();
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function buildSnakeOrder(n, rounds) {
@@ -33,6 +34,20 @@ function getSecret() {
   return sessionStorage.getItem('league_secret') || '';
 }
 
+// ── Identity ─────────────────────────────────────────────────────────────────
+function getMyName() {
+  if (typeof window === 'undefined') return '';
+  return sessionStorage.getItem('drafter_name') || '';
+}
+
+function saveMyName(name) {
+  sessionStorage.setItem('drafter_name', name);
+}
+
+function clearMyName() {
+  sessionStorage.removeItem('drafter_name');
+}
+
 // ── API calls ─────────────────────────────────────────────────────────────────
 async function apiGet(path, params = {}) {
   const qs = new URLSearchParams({ path, ...params }).toString();
@@ -48,7 +63,10 @@ async function statePost(action, payload = {}) {
     body: JSON.stringify({ action, payload }),
   });
   if (res.status === 401) throw new Error('AUTH_REQUIRED');
-  if (!res.ok) throw new Error(`State API ${res.status}`);
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || `State API ${res.status}`);
+  }
   return res.json();
 }
 
@@ -76,11 +94,17 @@ export default function Home() {
   const [err, setErr] = useState('');
   const [searchQ, setSearchQ] = useState('');
 
+  // identity
+  const [myName, setMyNameState] = useState('');
+
   // setup form
-  const [apiKey, setApiKey] = useState('');
-  const [tournId, setTournId] = useState('');
-  const [year, setYear] = useState('2026');
-  const [newDrafter, setNewDrafter] = useState('');
+  const [schedule, setSchedule] = useState(null);
+  const [selectedTournId, setSelectedTournId] = useState('');
+  const [creatorName, setCreatorName] = useState('');
+  const [loadingSchedule, setLoadingSchedule] = useState(false);
+
+  // lobby join
+  const [joinName, setJoinName] = useState('');
 
   const pollingRef = useRef(null);
   const refreshRef = useRef(null);
@@ -102,7 +126,33 @@ export default function Home() {
   // initial load
   useEffect(() => {
     stateGet().then(setS).catch(() => setLoadError(true));
+    setMyNameState(getMyName());
   }, []);
+
+  // clear stale identity if name not in drafters list
+  useEffect(() => {
+    if (s && myName && !s.drafters.includes(myName)) {
+      clearMyName();
+      setMyNameState('');
+    }
+  }, [s, myName]);
+
+  // auto-fetch schedule on mount (for setup)
+  useEffect(() => {
+    if (s && !s.configured && !schedule && !loadingSchedule) {
+      fetchSchedule();
+    }
+  }, [s?.configured]);
+
+  // poll during lobby and draft (every 5s) for live updates
+  useEffect(() => {
+    if (s?.configured && !s?.draftComplete) {
+      const interval = setInterval(async () => {
+        try { setS(await stateGet()); } catch {}
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [s?.configured, s?.draftComplete, s?.currentPickIndex]);
 
   // auto-refresh scores every 2 min when draft complete
   useEffect(() => {
@@ -112,40 +162,71 @@ export default function Home() {
     return () => clearInterval(pollingRef.current);
   }, [s?.draftComplete]);
 
+  // derived identity
+  const isCreator = myName && s?.creator === myName;
+  const isJoined = myName && s?.drafters?.includes(myName);
+  const currentDrafterIdx = s?.draftOrder?.length > 0 ? s.draftOrder[s.currentPickIndex] : null;
+  const currentDrafterName = currentDrafterIdx !== null ? s?.drafters?.[currentDrafterIdx] : null;
+  const isMyTurn = isJoined && !s?.draftComplete && s?.draftOrder?.length > 0 && currentDrafterName === myName;
+
   // ── handlers ──
+  const fetchSchedule = async () => {
+    setLoadingSchedule(true); setErr('');
+    try {
+      const data = await apiGet('schedules', { year: CURRENT_YEAR });
+      const list = data?.schedule || data?.schedules || (Array.isArray(data) ? data : []);
+      if (!list.length) throw new Error('No schedule found for this year.');
+      setSchedule(list);
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setLoadingSchedule(false);
+    }
+  };
+
   const loadTournament = () => wrap(async () => {
-    if (!apiKey || !tournId || !year) throw new Error('Fill in all fields.');
-    const data = await apiGet('tournaments', { tournId, year });
-    if (!data?.players) throw new Error('No player data — check tournament ID.');
+    if (!selectedTournId || !creatorName.trim()) throw new Error('Select a tournament and enter your name.');
+    const selectedTourn = schedule?.find(t => (t.tournId || t.id) === selectedTournId);
+    const data = await apiGet('tournaments', { tournId: selectedTournId, year: CURRENT_YEAR });
+    if (!data?.players) throw new Error('No player data — check tournament selection.');
     const field = data.players
       .filter(p => p.status !== 'wd')
       .map(p => ({ playerId: p.playerId, name: p.playerName || p.name || p.playerId, worldRank: p.worldRank || 999 }))
       .sort((a, b) => a.worldRank - b.worldRank);
+    const tournName = data.name || data.tournamentName || selectedTourn?.name || selectedTournId;
     const updated = await statePost('configure', {
-      apiKey, tournId, year,
-      tournamentName: data.name || data.tournamentName || tournId,
+      tournId: selectedTournId,
+      year: CURRENT_YEAR,
+      tournamentName: tournName,
       field,
+      creator: creatorName.trim(),
     });
+    saveMyName(creatorName.trim());
+    setMyNameState(creatorName.trim());
     setS(updated);
   });
 
-  const addDrafter = () => {
-    if (!newDrafter.trim()) return;
-    if (s.drafters.includes(newDrafter.trim())) { setNewDrafter(''); return; }
-    const drafters = [...s.drafters, newDrafter.trim()];
-    setNewDrafter('');
-    wrap(async () => { const u = await statePost('setDrafters', { drafters }); setS(u); });
-  };
+  const joinDraft = () => wrap(async () => {
+    const name = joinName.trim();
+    if (!name) throw new Error('Enter your name.');
+    const u = await statePost('joinDraft', { name });
+    saveMyName(name);
+    setMyNameState(name);
+    setJoinName('');
+    setS(u);
+  });
 
-  const removeDrafter = (name) => {
-    const drafters = s.drafters.filter(d => d !== name);
-    wrap(async () => { const u = await statePost('setDrafters', { drafters }); setS(u); });
-  };
+  const leaveDraft = () => wrap(async () => {
+    const u = await statePost('leaveDraft', { name: myName });
+    clearMyName();
+    setMyNameState('');
+    setS(u);
+  });
 
   const startDraft = () => wrap(async () => {
-    if (s.drafters.length < 2) throw new Error('Add at least 2 drafters.');
+    if (s.drafters.length < 2) throw new Error('Need at least 2 drafters to start.');
     const draftOrder = buildSnakeOrder(s.drafters.length, PICKS_PER_DRAFTER);
-    const u = await statePost('startDraft', { draftOrder });
+    const u = await statePost('startDraft', { draftOrder, creatorName: myName });
     setS(u); setTab('draft');
   });
 
@@ -156,7 +237,7 @@ export default function Home() {
     const res = await fetch('/api/state', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-league-secret': getSecret() },
-      body: JSON.stringify({ action: 'makePick', payload: { pick } }),
+      body: JSON.stringify({ action: 'makePick', payload: { pick, drafterName: myName } }),
     });
     if (res.status === 401) throw new Error('AUTH_REQUIRED');
     const data = await res.json();
@@ -174,7 +255,6 @@ export default function Home() {
     await refreshScoresFrom(fresh);
   });
 
-  // Keep ref current so polling interval always calls latest version
   refreshRef.current = refreshScores;
 
   const refreshScoresFrom = async (currentState) => {
@@ -200,6 +280,9 @@ export default function Home() {
   const reset = () => wrap(async () => {
     if (!confirm('Reset all league data? This cannot be undone.')) return;
     await stateDelete();
+    clearMyName();
+    setMyNameState('');
+    setSchedule(null);
     setS(await stateGet());
     setTab('draft');
   });
@@ -249,7 +332,10 @@ export default function Home() {
   );
   if (!s) return <div className="loading">Loading...</div>;
 
-  const showSetup = !s.configured || s.drafters.length === 0 || !s.draftOrder?.length;
+  // App phases
+  const inLobby = s.configured && !s.draftOrder?.length;
+  const inDraft = s.draftOrder?.length > 0 && !s.draftComplete;
+  const draftDone = s.draftComplete;
 
   return (
     <>
@@ -263,66 +349,106 @@ export default function Home() {
         <div className="logo">The <em>Draft</em></div>
         <div className="header-right">
           {s.tournamentName && <span className="badge">{s.tournamentName}</span>}
+          {myName && <span className="badge dim">{myName}</span>}
           {s.lastRefreshed && <span className="badge dim">↻ {new Date(s.lastRefreshed).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>}
-          {s.draftComplete && <button className="btn-ghost" onClick={refreshScores} disabled={busy}>↻ Refresh</button>}
-          <button className="btn-ghost danger" onClick={reset}>Reset</button>
+          {draftDone && <button className="btn-ghost" onClick={refreshScores} disabled={busy}>↻ Refresh</button>}
+          {isCreator && <button className="btn-ghost danger" onClick={reset}>Reset</button>}
         </div>
       </header>
 
       <main>
-        {/* ── SETUP ── */}
-        {showSetup && (
+        {/* ── SETUP: Tournament Picker ── */}
+        {!s.configured && (
           <div className="panel">
-            <h2>League Setup</h2>
+            <h2>Create a League</h2>
 
-            {!s.configured && (
+            {loadingSchedule && <div className="empty-state">Loading tournament schedule...</div>}
+
+            {!loadingSchedule && schedule && (
               <>
-                <div className="grid-4">
-                  <div className="field">
-                    <label>RapidAPI Key</label>
-                    <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Your Slash Golf key" />
-                  </div>
-                  <div className="field">
-                    <label>Tournament ID</label>
-                    <input value={tournId} onChange={e => setTournId(e.target.value)} placeholder="e.g. 014" />
-                  </div>
-                  <div className="field">
-                    <label>Year</label>
-                    <input value={year} onChange={e => setYear(e.target.value)} placeholder="2026" />
-                  </div>
-                  <button className="btn" onClick={loadTournament} disabled={busy}>Load Field</button>
+                <div className="field" style={{marginBottom:12}}>
+                  <label>Tournament ({CURRENT_YEAR})</label>
+                  <select value={selectedTournId} onChange={e => setSelectedTournId(e.target.value)}>
+                    <option value="" disabled>Select a tournament...</option>
+                    {schedule.map(t => {
+                      const id = t.tournId || t.id;
+                      const name = t.name || t.tournamentName || id;
+                      const dates = t.startDate ? ` — ${t.startDate}` : '';
+                      return <option key={id} value={id}>{name}{dates}</option>;
+                    })}
+                  </select>
                 </div>
-                {err && <div className="error">{err}</div>}
+
+                <div className="field" style={{marginBottom:12}}>
+                  <label>Your Name</label>
+                  <input value={creatorName} onChange={e => setCreatorName(e.target.value)}
+                    placeholder="Enter your name..." />
+                </div>
+
+                <button className="btn" onClick={loadTournament} disabled={busy || !selectedTournId || !creatorName.trim()}>
+                  Create League
+                </button>
               </>
             )}
 
-            {s.configured && (
-              <div className="configured-note">✓ Field loaded — {s.field.length} players · {s.tournamentName}</div>
-            )}
-
-            {s.configured && (
-              <div className="drafter-section">
-                <div className="field" style={{marginBottom:12}}>
-                  <label>Add Drafters</label>
-                  <div className="row-gap">
-                    <input value={newDrafter} onChange={e => setNewDrafter(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && addDrafter()}
-                      placeholder="Drafter name..." />
-                    <button className="btn" onClick={addDrafter} disabled={busy}>Add</button>
-                  </div>
-                </div>
-                <div className="tags">
-                  {s.drafters.map(d => (
-                    <div key={d} className="tag">{d}<button onClick={() => removeDrafter(d)}>×</button></div>
-                  ))}
-                </div>
-                {s.drafters.length >= 2 && (
-                  <button className="btn" style={{marginTop:16}} onClick={startDraft} disabled={busy}>
-                    Start Snake Draft ({s.drafters.length} drafters · {PICKS_PER_DRAFTER} picks each) →
-                  </button>
-                )}
+            {!loadingSchedule && !schedule && (
+              <div>
+                <div className="empty-state">Could not load tournament schedule.</div>
+                <button className="btn" onClick={fetchSchedule} style={{marginTop:8}}>Retry</button>
               </div>
             )}
+
+            {err && <div className="error">{err}</div>}
+          </div>
+        )}
+
+        {/* ── LOBBY: Join & Wait ── */}
+        {inLobby && (
+          <div className="panel">
+            <h2>Lobby</h2>
+            <div className="configured-note">{s.tournamentName} — {s.field.length} players in field</div>
+
+            <div className="drafter-section">
+              <div className="section-title" style={{marginTop:16}}>Drafters ({s.drafters.length})</div>
+              <div className="tags">
+                {s.drafters.map(d => (
+                  <div key={d} className="tag">
+                    {d}{d === s.creator ? ' (host)' : ''}
+                    {d === myName && d !== s.creator && (
+                      <button onClick={leaveDraft} disabled={busy}>×</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {!isJoined && (
+                <div className="field" style={{marginTop:16}}>
+                  <label>Join the Draft</label>
+                  <div className="row-gap">
+                    <input value={joinName} onChange={e => setJoinName(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && joinDraft()}
+                      placeholder="Your name..." />
+                    <button className="btn" onClick={joinDraft} disabled={busy}>Join</button>
+                  </div>
+                </div>
+              )}
+
+              {isCreator && s.drafters.length >= 2 && (
+                <button className="btn" style={{marginTop:16}} onClick={startDraft} disabled={busy}>
+                  Start Snake Draft ({s.drafters.length} drafters · {PICKS_PER_DRAFTER} picks each)
+                </button>
+              )}
+
+              {isCreator && s.drafters.length < 2 && (
+                <div className="empty-state" style={{marginTop:12}}>Waiting for more drafters to join...</div>
+              )}
+
+              {isJoined && !isCreator && (
+                <div className="empty-state" style={{marginTop:12}}>Waiting for {s.creator} to start the draft...</div>
+              )}
+            </div>
+
+            {err && <div className="error">{err}</div>}
           </div>
         )}
 
@@ -337,14 +463,9 @@ export default function Home() {
             {/* DRAFT TAB */}
             {tab === 'draft' && (
               <div>
-                {!s.draftComplete && (
+                {inDraft && isMyTurn && (
                   <div className="panel search-panel">
-                    <h3>
-                      {(() => {
-                        const curIdx = s.draftOrder[s.currentPickIndex];
-                        return `Pick ${s.currentPickIndex + 1} of ${s.draftOrder.length} · On the clock: ${s.drafters[curIdx]}`;
-                      })()}
-                    </h3>
+                    <h3>Your Pick! Pick {s.currentPickIndex + 1} of {s.draftOrder.length}</h3>
                     <div className="row-gap" style={{marginBottom:10}}>
                       <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Search player..." />
                     </div>
@@ -360,31 +481,41 @@ export default function Home() {
                     </div>
                   </div>
                 )}
-                {s.draftComplete && <div className="complete-banner">✓ Draft Complete</div>}
+
+                {inDraft && !isMyTurn && (
+                  <div className="panel">
+                    <h3>Pick {s.currentPickIndex + 1} of {s.draftOrder.length}</h3>
+                    <div className="empty-state">Waiting for {currentDrafterName} to pick...</div>
+                  </div>
+                )}
+
+                {draftDone && <div className="complete-banner">Draft Complete</div>}
 
                 <div className="section-title">Draft Board</div>
                 <div className="pick-list">
                   {(s.draftOrder || []).map((drafterIdx, i) => {
                     const pick = s.picks[i];
-                    const isCurrent = !s.draftComplete && i === s.currentPickIndex;
+                    const isCurrent = inDraft && i === s.currentPickIndex;
                     const roundNum = Math.floor(i / s.drafters.length) + 1;
                     return (
                       <div key={i} className={`pick-row ${isCurrent ? 'current' : ''} ${pick ? 'filled' : ''}`}>
                         <span className="pick-num">#{i + 1}</span>
                         <span className="pick-owner">{s.drafters[drafterIdx]}</span>
-                        <span className={`pick-player ${!pick ? 'empty' : ''}`}>{pick ? pick.name : 'Waiting…'}</span>
+                        <span className={`pick-player ${!pick ? 'empty' : ''}`}>{pick ? pick.name : 'Waiting...'}</span>
                         <span className="pick-round">R{roundNum}</span>
                       </div>
                     );
                   })}
                 </div>
+
+                {err && <div className="error">{err}</div>}
               </div>
             )}
 
             {/* SCORES TAB */}
             {tab === 'scores' && (
               <div>
-                {!s.draftComplete
+                {!draftDone
                   ? <div className="empty-state">Complete the draft to see scores.</div>
                   : teams.length === 0
                     ? <div className="empty-state">No scores yet — hit Refresh.</div>
