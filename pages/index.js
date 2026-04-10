@@ -468,7 +468,6 @@ export default function Home() {
       </Head>
 
       <header>
-        <div className="logo">{s?.tournamentName || "The Masters"}</div>
         <div className="header-right">
           {s.tournamentName && (
             <span className="badge">{s.tournamentName}</span>
