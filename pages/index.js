@@ -110,6 +110,10 @@ export default function Home() {
   const [joinName, setJoinName] = useState("");
   const [addDrafterName, setAddDrafterName] = useState("");
 
+  // commissioner
+  const [assignDrafter, setAssignDrafter] = useState("");
+  const [assignSearch, setAssignSearch] = useState("");
+
   const pollingRef = useRef(null);
   const refreshRef = useRef(null);
 
@@ -274,6 +278,19 @@ export default function Home() {
       if (!name) throw new Error("Enter a name.");
       const u = await statePost("addDrafter", { name, creatorName: myName });
       setAddDrafterName("");
+      setS(u);
+    });
+
+  const assignGolferToDrafter = (playerId, playerName) =>
+    wrap(async () => {
+      if (!assignDrafter) throw new Error("Select a drafter first.");
+      const u = await statePost("assignGolfer", {
+        creatorName: myName,
+        drafterName: assignDrafter,
+        playerId,
+        playerName,
+      });
+      setAssignSearch("");
       setS(u);
     });
 
@@ -829,6 +846,86 @@ export default function Home() {
                 {s.lastRefreshed && (
                   <div className="last-refreshed">
                     Last updated: {new Date(s.lastRefreshed).toLocaleString()}
+                  </div>
+                )}
+
+                {/* COMMISSIONER PANEL */}
+                {isCreator && (
+                  <div className="panel" style={{ marginTop: 16 }}>
+                    <h3>Commissioner</h3>
+
+                    <div className="field" style={{ marginBottom: 12 }}>
+                      <label>Add Drafter</label>
+                      <div className="row-gap">
+                        <input
+                          value={addDrafterName}
+                          onChange={(e) => setAddDrafterName(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && addDrafter()}
+                          placeholder="Drafter name..."
+                        />
+                        <button className="btn" onClick={addDrafter} disabled={busy}>
+                          Add
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="field" style={{ marginBottom: 8 }}>
+                      <label>Assign Golfer to Drafter</label>
+                      <select
+                        value={assignDrafter}
+                        onChange={(e) => setAssignDrafter(e.target.value)}
+                        style={{ marginBottom: 8 }}
+                      >
+                        <option value="" disabled>
+                          Select drafter...
+                        </option>
+                        {s.drafters.map((d) => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+                      {assignDrafter && (
+                        <>
+                          <input
+                            value={assignSearch}
+                            onChange={(e) => setAssignSearch(e.target.value)}
+                            placeholder="Search player..."
+                            style={{ marginBottom: 6 }}
+                          />
+                          <div className="results" style={{ maxHeight: 200 }}>
+                            {(s.field || [])
+                              .filter((p) =>
+                                p.name.toLowerCase().includes(assignSearch.toLowerCase()),
+                              )
+                              .slice(0, 15)
+                              .map((p) => {
+                                const taken = (s.picks || []).some(
+                                  (pk) => pk.playerId === p.playerId,
+                                );
+                                return (
+                                  <div
+                                    key={p.playerId}
+                                    className={`result-item ${taken ? "drafted" : ""}`}
+                                    onClick={() =>
+                                      !taken &&
+                                      assignGolferToDrafter(p.playerId, p.name)
+                                    }
+                                  >
+                                    <span>{p.name}</span>
+                                    <span className="muted">
+                                      {p.worldRank < 999 ? `WR #${p.worldRank}` : ""}
+                                      {taken ? " · drafted" : ""}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {err && <div className="error">{err}</div>}
                   </div>
                 )}
               </div>

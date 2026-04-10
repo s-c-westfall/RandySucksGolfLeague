@@ -86,7 +86,6 @@ export default async function handler(req, res) {
       }
 
       case 'addDrafter': {
-        if (state.draftOrder.length > 0) return res.status(400).json({ error: 'Draft already started.' });
         if (payload.creatorName !== state.creator) return res.status(403).json({ error: 'Only the league creator can add drafters.' });
         const addName = (payload.name || '').trim();
         if (!addName) return res.status(400).json({ error: 'Name is required.' });
@@ -94,6 +93,18 @@ export default async function handler(req, res) {
         const addUpdated = { ...state, drafters: [...state.drafters, addName] };
         await setState(addUpdated);
         return res.status(200).json(addUpdated);
+      }
+
+      case 'assignGolfer': {
+        if (payload.creatorName !== state.creator) return res.status(403).json({ error: 'Only the league creator can assign golfers.' });
+        const drafterIdx = state.drafters.indexOf(payload.drafterName);
+        if (drafterIdx === -1) return res.status(400).json({ error: 'Drafter not found.' });
+        const alreadyPicked = state.picks.some(p => p.playerId === payload.playerId);
+        if (alreadyPicked) return res.status(409).json({ error: 'That golfer is already drafted.' });
+        const pick = { pickIndex: state.picks.length, drafterIndex: drafterIdx, playerId: payload.playerId, name: payload.playerName };
+        const updated = { ...state, picks: [...state.picks, pick] };
+        await setState(updated);
+        return res.status(200).json(updated);
       }
 
       case 'joinDraft': {
@@ -121,8 +132,15 @@ export default async function handler(req, res) {
           return res.status(403).json({ error: 'Only the league creator can start the draft.' });
         }
         if (state.drafters.length < 2) return res.status(400).json({ error: 'Need at least 2 drafters.' });
+        // Shuffle drafters for random draft order
+        const shuffled = [...state.drafters];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
         const updated = {
           ...state,
+          drafters: shuffled,
           picks: [],
           currentPickIndex: 0,
           draftComplete: false,
