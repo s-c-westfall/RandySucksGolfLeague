@@ -37,15 +37,15 @@ function getSecret() {
 // ── Identity ─────────────────────────────────────────────────────────────────
 function getMyName() {
   if (typeof window === 'undefined') return '';
-  return sessionStorage.getItem('drafter_name') || '';
+  return localStorage.getItem('drafter_name') || '';
 }
 
 function saveMyName(name) {
-  sessionStorage.setItem('drafter_name', name);
+  localStorage.setItem('drafter_name', name);
 }
 
 function clearMyName() {
-  sessionStorage.removeItem('drafter_name');
+  localStorage.removeItem('drafter_name');
 }
 
 // ── API calls ─────────────────────────────────────────────────────────────────
@@ -355,7 +355,7 @@ export default function Home() {
           {myName && <span className="badge dim">{myName}</span>}
           {s.lastRefreshed && <span className="badge dim">↻ {new Date(s.lastRefreshed).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>}
           {draftDone && <button className="btn-ghost" onClick={refreshScores} disabled={busy}>↻ Refresh</button>}
-          {isCreator && <button className="btn-ghost danger" onClick={reset}>Reset</button>}
+          <button className="btn-ghost danger" onClick={reset}>Reset</button>
         </div>
       </header>
 
