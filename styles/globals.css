@@ -391,4 +391,5 @@ input::placeholder { color: var(--text-light); }
   header { padding: 12px 16px; }
   main { padding: 20px 14px; }
   .panel { padding: 18px 16px; }
+  .team-golfers { grid-template-columns: 1fr; }
 }
