@@ -184,7 +184,7 @@ export default function Home() {
   }, [s?.draftComplete]);
 
   // derived identity
-  const isCreator = myName && s?.creator === myName;
+  const isCreator = myName && (s?.creator === myName || s?.commissionerName === myName);
   const isJoined = myName && s?.drafters?.includes(myName);
   const currentDrafterIdx =
     s?.draftOrder?.length > 0 ? s.draftOrder[s.currentPickIndex] : null;

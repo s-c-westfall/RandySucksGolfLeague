@@ -45,6 +45,12 @@ function checkAuth(req) {
   return token === expected;
 }
 
+function isCommissioner(name, state) {
+  const envName = process.env.COMMISSIONER_NAME;
+  if (envName && name === envName) return true;
+  return name === state.creator;
+}
+
 export default async function handler(req, res) {
   // Mutations require auth when LEAGUE_SECRET is set
   if ((req.method === 'POST' || req.method === 'DELETE') && !checkAuth(req)) {
@@ -53,7 +59,8 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const state = await getState();
-    return res.status(200).json(state);
+    const commissionerName = process.env.COMMISSIONER_NAME || null;
+    return res.status(200).json({ ...state, commissionerName });
   }
 
   if (req.method === 'DELETE') {
@@ -86,7 +93,7 @@ export default async function handler(req, res) {
       }
 
       case 'addDrafter': {
-        if (payload.creatorName !== state.creator) return res.status(403).json({ error: 'Only the league creator can add drafters.' });
+        if (!isCommissioner(payload.creatorName, state)) return res.status(403).json({ error: 'Only the league creator can add drafters.' });
         const addName = (payload.name || '').trim();
         if (!addName) return res.status(400).json({ error: 'Name is required.' });
         if (state.drafters.includes(addName)) return res.status(409).json({ error: 'That name is already taken.' });
@@ -96,7 +103,7 @@ export default async function handler(req, res) {
       }
 
       case 'assignGolfer': {
-        if (payload.creatorName !== state.creator) return res.status(403).json({ error: 'Only the league creator can assign golfers.' });
+        if (!isCommissioner(payload.creatorName, state)) return res.status(403).json({ error: 'Only the league creator can assign golfers.' });
         const drafterIdx = state.drafters.indexOf(payload.drafterName);
         if (drafterIdx === -1) return res.status(400).json({ error: 'Drafter not found.' });
         const alreadyPicked = state.picks.some(p => p.playerId === payload.playerId);
@@ -128,7 +135,7 @@ export default async function handler(req, res) {
       }
 
       case 'startDraft': {
-        if (payload.creatorName !== state.creator) {
+        if (!isCommissioner(payload.creatorName, state)) {
           return res.status(403).json({ error: 'Only the league creator can start the draft.' });
         }
         if (state.drafters.length < 2) return res.status(400).json({ error: 'Need at least 2 drafters.' });
@@ -160,7 +167,7 @@ export default async function handler(req, res) {
         // Validate the pick is from the correct drafter
         const expectedDrafterIndex = state.draftOrder[state.currentPickIndex];
         const expectedName = state.drafters[expectedDrafterIndex];
-        if (payload.drafterName !== expectedName && payload.drafterName !== state.creator) {
+        if (payload.drafterName !== expectedName && !isCommissioner(payload.drafterName, state)) {
           return res.status(403).json({ error: `It is ${expectedName}'s turn, not yours.` });
         }
         const newPicks = [...state.picks];
