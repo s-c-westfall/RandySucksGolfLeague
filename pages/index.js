@@ -191,7 +191,10 @@ export default function Home() {
     if (!data?.players) throw new Error('No player data — check tournament selection.');
     const field = data.players
       .filter(p => p.status !== 'wd')
-      .map(p => ({ playerId: p.playerId, name: p.playerName || p.name || p.playerId, worldRank: p.worldRank || 999 }))
+      .map(p => {
+        const name = p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : (p.playerName || p.name || p.playerId);
+        return { playerId: p.playerId, name, worldRank: p.worldRank || 999 };
+      })
       .sort((a, b) => a.worldRank - b.worldRank);
     const tournName = data.name || data.tournamentName || selectedTourn?.name || selectedTournId;
     const updated = await statePost('configure', {
