@@ -469,9 +469,6 @@ export default function Home() {
 
       <header>
         <div className="header-right">
-          {s.tournamentName && (
-            <span className="badge">{s.tournamentName}</span>
-          )}
           {myName && <span className="badge dim">{myName}</span>}
           {s.lastRefreshed && (
             <span className="badge dim">
