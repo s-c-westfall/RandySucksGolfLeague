@@ -263,17 +263,19 @@ export default function Home() {
   const refreshScoresFrom = async (currentState) => {
     try {
       const data = await apiGet('leaderboard', { tournId: currentState.tournId, year: currentState.year });
-      if (!data?.leaderboard) return;
+      const rows = data?.leaderboardRows;
+      if (!rows) return;
       const scores = {};
-      for (const p of data.leaderboard) {
+      for (const p of rows) {
         let total = p.total;
         if (typeof total === 'string') total = total === 'E' ? 0 : (parseInt(total) || 0);
         const rounds = (p.rounds || []).map(r => {
-          let sc = r.score ?? r.toPar;
+          let sc = r.scoreToPar ?? r.score ?? r.toPar;
           if (typeof sc === 'string') sc = sc === 'E' ? 0 : (parseInt(sc) || null);
           return sc;
         });
-        scores[p.playerId] = { total, rounds, status: p.status || 'active', pos: p.position || p.pos || '–', thru: p.thru || '–' };
+        const thru = p.roundComplete ? 'F' : (p.currentHole ? `${p.currentHole}` : '–');
+        scores[p.playerId] = { total, rounds, status: p.status || 'active', pos: p.position || '–', thru };
       }
       const u = await statePost('updateScores', { scores });
       setS(u);
