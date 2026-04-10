@@ -983,7 +983,7 @@ function buildTeams(s) {
           playerId: p.playerId,
           total: sc ? sc.total : null,
           status: sc?.status || "unknown",
-          thru: sc?.thru || "–",
+          thru: typeof sc?.thru === 'string' || typeof sc?.thru === 'number' ? sc.thru : "–",
           pos: sc?.pos || "–",
           cut,
           counting: false,
