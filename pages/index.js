@@ -148,9 +148,9 @@ export default function Home() {
     setMyNameState(getMyName());
   }, []);
 
-  // clear stale identity if name not in drafters list
+  // clear stale identity if name not in drafters list (unless commissioner)
   useEffect(() => {
-    if (s && myName && !s.drafters.includes(myName)) {
+    if (s && myName && !s.drafters.includes(myName) && s.commissionerName !== myName) {
       clearMyName();
       setMyNameState("");
     }
@@ -516,6 +516,42 @@ export default function Home() {
       </header>
 
       <main>
+        {/* ── IDENTIFY: prompt for name when not recognized ── */}
+        {!myName && !isCreator && s.configured && (s.draftOrder?.length > 0 || s.draftComplete) && (
+          <div className="panel">
+            <h2>Who are you?</h2>
+            <div className="field">
+              <label>Enter your name to continue</label>
+              <div className="row-gap">
+                <input
+                  value={joinName}
+                  onChange={(e) => setJoinName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && joinName.trim()) {
+                      saveMyName(joinName.trim());
+                      setMyNameState(joinName.trim());
+                      setJoinName("");
+                    }
+                  }}
+                  placeholder="Your name..."
+                />
+                <button
+                  className="btn"
+                  onClick={() => {
+                    if (joinName.trim()) {
+                      saveMyName(joinName.trim());
+                      setMyNameState(joinName.trim());
+                      setJoinName("");
+                    }
+                  }}
+                >
+                  Go
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── SETUP: Tournament Picker ── */}
         {!s.configured && (
           <div className="panel">
