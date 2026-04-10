@@ -360,7 +360,7 @@ export default function Home() {
       </Head>
 
       <header>
-        <div className="logo">The <em>Draft</em></div>
+        <div className="logo">{s?.tournamentName || 'The Draft'}</div>
         <div className="header-right">
           {s.tournamentName && <span className="badge">{s.tournamentName}</span>}
           {myName && <span className="badge dim">{myName}</span>}
