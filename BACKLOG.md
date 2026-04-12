@@ -1012,3 +1012,119 @@ Add an optional "Venmo username" field to the registration form (item #1). Store
 *Unrefined — needs spec*
 
 The header-right section (`pages/index.js:504-527`, `styles/globals.css:46`) contains the user badge, refresh timestamp, refresh button, and reset button. On some viewports these wrap awkwardly. Ensure buttons are properly right-aligned and don't collide with the tournament name/selector on narrow screens.
+
+---
+
+## 12. Accessibility Fixes
+
+### Problem
+The app has significant accessibility gaps that prevent screen reader users, keyboard-only users, and colorblind users from using it effectively.
+
+### P0 — Critical (must fix)
+
+#### Add `lang="en"` to HTML
+Screen readers can't determine page language. Add a custom `pages/_document.js` with `<Html lang="en">` or set `i18n.defaultLocale` in `next.config.js`.
+
+**Files:** New `pages/_document.js` or `next.config.js`
+
+#### Add `role="alert"` to error messages
+Error divs (`<div className="error">`) are not announced to screen readers. Add `role="alert"` so errors are read aloud immediately.
+
+**Files:** `pages/index.js` — every `{err && <div className="error">...}` block
+
+#### Make clickable divs keyboard-accessible
+Draft pick results (`pages/index.js:769-784`) and commissioner assign results (`pages/index.js:948-974`) use `<div onClick>` with no keyboard support. Add `role="button"`, `tabIndex={0}`, and `onKeyDown` (Enter/Space triggers click) to each. Alternatively, replace with `<button>` elements styled as rows.
+
+**Files:** `pages/index.js`
+
+### P1 — Major
+
+#### Fix color contrast for muted text
+`--text-light: #8a8a7a` on `--green-deep: #1a2e1a` has ~2.8:1 contrast ratio, below the WCAG AA minimum of 4.5:1. Raise to at least `#a0a090` or lighter.
+
+**Files:** `styles/globals.css` — `:root` variable
+
+#### Add labels to placeholder-only inputs
+These inputs have no `<label>` or `aria-label`:
+- Password input (`pages/index.js:452-455`)
+- Search player input (`pages/index.js:762-766`)
+- Join name input (`pages/index.js:539`)
+- Add drafter input (`pages/index.js:688`)
+
+Add `aria-label` attributes matching the placeholder text.
+
+**Files:** `pages/index.js`
+
+#### Add ARIA tab pattern
+The Draft Board / Scoreboard tabs (`pages/index.js:735-748`) lack proper ARIA roles. Add:
+- `role="tablist"` on the tab container
+- `role="tab"`, `aria-selected`, `aria-controls` on each tab button
+- `role="tabpanel"`, `id` on each content panel
+
+**Files:** `pages/index.js`
+
+#### Add `:focus-visible` styles
+Buttons and interactive elements have no custom focus indicator. The dark background makes the browser default focus ring nearly invisible. Add visible `:focus-visible` outlines (gold border or outline).
+
+**Files:** `styles/globals.css` — add `:focus-visible` rules for `.btn`, `.btn-ghost`, `.tab`, `.result-item`, `input`, `select`
+
+### P2 — Moderate
+
+#### Add accessible names to icon indicators
+- `★` (counting golfer) and `✕` (non-counting) at `pages/index.js:870-871` — wrap in `<span aria-hidden="true">` and add a `<span className="sr-only">` with text like "counting" / "not counting"
+- Tag remove button `×` (`pages/index.js:657`) — add `aria-label="Remove {drafter name}"`
+
+**Files:** `pages/index.js`, `styles/globals.css` (add `.sr-only` utility class)
+
+#### Add skip navigation link
+Add a "Skip to main content" link as the first focusable element in the page, visually hidden until focused.
+
+**Files:** `pages/index.js`, `styles/globals.css`
+
+#### Add `aria-live` for score updates
+When scores auto-refresh (every 2 min polling), content changes without announcement. Add an `aria-live="polite"` region that announces "Scores updated" when new data arrives.
+
+**Files:** `pages/index.js`
+
+### P3 — Minor
+
+#### Dynamic page title
+Update `<title>` based on app state: "Setup — Golf League", "Lobby — Golf League", "Draft — Golf League", "Scoreboard — Golf League".
+
+**Files:** `pages/index.js` — `<Head>` component
+
+#### Focus management on transitions
+- Move focus to password input when `needsAuth` becomes true
+- Move focus to tab content when switching tabs
+
+**Files:** `pages/index.js` — add `useRef` + `focus()` calls
+
+### Acceptance Criteria
+- [ ] Page has `lang="en"` on the `<html>` element
+- [ ] Error messages have `role="alert"` and are announced by screen readers
+- [ ] All interactive elements are reachable and operable via keyboard (Tab, Enter, Space)
+- [ ] Muted text meets WCAG AA contrast ratio (4.5:1 minimum)
+- [ ] All form inputs have accessible labels (via `<label>`, `aria-label`, or `aria-labelledby`)
+- [ ] Tabs follow the ARIA tablist pattern with proper roles and states
+- [ ] All interactive elements have a visible focus indicator
+- [ ] Icon-only elements have accessible text alternatives
+- [ ] A skip navigation link is present
+- [ ] Score updates are announced via `aria-live` region
+- [ ] Page title reflects current app state
+
+### Scope Boundaries
+- This item covers the existing codebase only — new features from other backlog items should implement accessibility from the start
+- No full WCAG AAA compliance — target AA
+- No automated testing setup (e.g., axe-core) — manual review is sufficient for this scale
+
+### Files to Touch
+- New: `pages/_document.js` — add `lang="en"`
+- `pages/index.js` — ARIA roles, labels, keyboard handlers, focus management, dynamic title, live regions
+- `styles/globals.css` — contrast fix, `:focus-visible` styles, `.sr-only` utility class
+
+### Testing Notes
+- Navigate entire app with keyboard only (no mouse) — every action should be possible
+- Test with a screen reader (VoiceOver on Mac) — verify all content and actions are announced
+- Check color contrast with browser dev tools or a contrast checker
+- Verify error messages are announced immediately when they appear
+- Tab through the draft pick list — verify each available golfer is focusable and selectable with Enter
