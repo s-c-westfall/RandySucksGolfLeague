@@ -836,7 +836,7 @@ export default function Home() {
                           <span
                             className={`team-rank ${rank === 0 ? "gold" : ""}`}
                           >
-                            {rank + 1}
+                            {team.displayPos}
                           </span>
                           <span className="team-name">{team.name}</span>
                           <span
@@ -860,9 +860,11 @@ export default function Home() {
                               >
                                 {g.cut
                                   ? g.status.toUpperCase()
-                                  : g.thru !== "–"
-                                    ? `Thru ${g.thru}`
-                                    : ""}
+                                  : g.thru === "F"
+                                    ? "Done"
+                                    : g.thru !== "–"
+                                      ? `Thru ${g.thru}`
+                                      : ""}
                               </span>
                               <span
                                 className={`golfer-score ${g.cut ? "" : scoreClass(g.total)}`}
@@ -1007,9 +1009,24 @@ function buildTeams(s) {
     return { name, golfers, teamTotal };
   });
 
-  return teams.sort((a, b) => {
+  const sorted = teams.sort((a, b) => {
     if (a.teamTotal === null) return 1;
     if (b.teamTotal === null) return -1;
     return a.teamTotal - b.teamTotal;
   });
+
+  // Assign positions with ties (e.g. T1, T2)
+  for (let i = 0; i < sorted.length; i++) {
+    if (sorted[i].teamTotal === null) { sorted[i].position = '–'; continue; }
+    const pos = i > 0 && sorted[i].teamTotal === sorted[i - 1].teamTotal
+      ? sorted[i - 1].position
+      : i + 1;
+    sorted[i].position = pos;
+  }
+  for (const t of sorted) {
+    const tied = sorted.filter(o => o.position === t.position && o.teamTotal !== null).length > 1;
+    t.displayPos = t.teamTotal === null ? '–' : tied ? `T${t.position}` : `${t.position}`;
+  }
+
+  return sorted;
 }
