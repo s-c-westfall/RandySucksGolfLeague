@@ -370,11 +370,21 @@ export default function Home() {
             sc = sc === "E" ? 0 : parseInt(sc) || null;
           return sc;
         });
-        const hole = typeof p.currentHole === 'number' ? p.currentHole : (parseInt(p.currentHole) || null);
+        // Parse MongoDB $numberInt format: {"$numberInt":"1"} → 1
+        const parseNum = (v) => {
+          if (typeof v === 'number') return v;
+          if (v && typeof v === 'object' && v.$numberInt) return parseInt(v.$numberInt) || null;
+          return parseInt(v) || null;
+        };
+        const hole = parseNum(p.currentHole);
+        const curRound = parseNum(p.currentRound);
+        // Determine thru status
         let thru;
         if (p.status === 'complete') thru = 'F';
         else if (p.roundComplete) thru = 'F';
-        else if (hole) thru = `${hole}`;
+        else if (p.thru && p.thru !== '') thru = p.thru;
+        else if (p.status === 'not started') thru = p.teeTime || 'Not started';
+        else if (hole && hole > 1) thru = `${hole}`;
         else thru = '–';
         scores[p.playerId] = {
           total,
@@ -382,6 +392,7 @@ export default function Home() {
           status: p.status || "active",
           pos: p.position || "–",
           thru,
+          currentRound: curRound,
         };
       }
       const u = await statePost("updateScores", { scores });
@@ -866,9 +877,11 @@ export default function Home() {
                                   ? g.status.toUpperCase()
                                   : g.thru === "F"
                                     ? "Done"
-                                    : g.thru !== "–"
-                                      ? `Thru ${g.thru}`
-                                      : ""}
+                                    : g.thru === "–"
+                                      ? ""
+                                      : /^\d+$/.test(g.thru)
+                                        ? `Thru ${g.thru}`
+                                        : g.thru}
                               </span>
                               <span
                                 className={`golfer-score ${g.cut ? "" : scoreClass(g.total)}`}
