@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tournament History Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-deep: #1a2e1a;
+      --green-mid: #2d4a2d;
+      --gold: #c9a84c;
+      --gold-light: #e8c97a;
+      --cream: #f5f0e8;
+      --cream-dark: #e8e0d0;
+      --text-light: #8a8a7a;
+      --cut: #c0392b;
+      --radius: 4px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--green-deep);
+      color: var(--cream);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(61,100,61,0.3) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(40,70,40,0.2) 0%, transparent 50%);
+    }
+
+    /* HEADER */
+    header {
+      border-bottom: 1px solid rgba(201,168,76,0.3);
+      padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,0,0,0.2); backdrop-filter: blur(8px);
+      position: sticky; top: 0; z-index: 100; gap: 12px;
+    }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .badge { font-family: 'DM Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 2px; }
+    .badge.dim { color: var(--text-light); background: none; border: 1px solid rgba(255,255,255,0.1); }
+
+    /* TOURNAMENT SELECTOR */
+    .tourn-selector {
+      position: relative;
+      display: inline-block;
+    }
+    .tourn-selector-btn {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      color: var(--gold);
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+      transition: color 0.2s;
+    }
+    .tourn-selector-btn:hover { color: var(--gold-light); }
+    .tourn-selector-btn .chevron {
+      font-size: 0.7rem;
+      color: var(--text-light);
+      transition: transform 0.2s;
+    }
+    .tourn-selector-btn.open .chevron { transform: rotate(180deg); }
+
+    .tourn-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      min-width: 300px;
+      background: #1e351e;
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      z-index: 200;
+      overflow: hidden;
+      animation: dropIn 0.2s ease-out;
+    }
+    @keyframes dropIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .tourn-dropdown-header {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-light);
+      padding: 10px 14px 6px;
+    }
+    .tourn-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .tourn-dropdown-item:last-child { border-bottom: none; }
+    .tourn-dropdown-item:hover { background: rgba(201,168,76,0.1); }
+    .tourn-dropdown-item.active {
+      background: rgba(201,168,76,0.08);
+      border-left: 3px solid var(--gold);
+      padding-left: 11px;
+    }
+    .tourn-item-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      color: var(--cream);
+      flex: 1;
+    }
+    .tourn-item-year {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-light);
+    }
+    .tourn-item-winner {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--gold);
+    }
+    .tourn-item-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+    }
+    .tourn-item-live {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--gold);
+      background: rgba(201,168,76,0.15);
+      padding: 2px 6px;
+      border-radius: 2px;
+    }
+
+    /* HISTORY BANNER */
+    .history-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(201,168,76,0.06);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-left: 3px solid var(--gold);
+      border-radius: var(--radius);
+      padding: 10px 16px;
+      margin-bottom: 20px;
+    }
+    .history-banner-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+      white-space: nowrap;
+    }
+    .history-banner-detail {
+      font-size: 0.84rem;
+      color: var(--cream);
+    }
+    .history-banner-btn {
+      margin-left: auto;
+      background: none;
+      border: 1px solid rgba(201,168,76,0.35);
+      color: var(--gold-light);
+      padding: 4px 10px;
+      border-radius: 2px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+    .history-banner-btn:hover { background: rgba(201,168,76,0.12); }
+
+    main { max-width: 1000px; margin: 0 auto; padding: 32px 24px; }
+
+    /* SCOREBOARD (reused from main app) */
+    .scoreboard { display: flex; flex-direction: column; gap: 6px; }
+    .team-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius); overflow: hidden; }
+    .team-card.leader { border-color: var(--gold); background: rgba(201,168,76,0.04); }
+    .team-header { display: flex; align-items: center; padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); gap: 10px; }
+    .team-rank { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--text-light); min-width: 28px; }
+    .team-rank.gold { color: var(--gold); }
+    .team-name { flex: 1; font-weight: 500; font-size: 0.9rem; }
+    .team-total { font-family: 'Playfair Display', serif; font-size: 1.5rem; letter-spacing: -0.02em; font-weight: 700; }
+    .team-total.under { color: #5cb85c; }
+    .team-total.over { color: var(--cut); }
+    .team-golfers { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .golfer-row { display: flex; align-items: center; padding: 3px 14px; border-right: 1px solid rgba(255,255,255,0.04); font-size: 0.8rem; gap: 6px; }
+    .golfer-name { flex: 1; font-weight: 500; }
+    .golfer-name.nc { color: var(--text-light); font-weight: 400; }
+    .star { color: var(--gold); font-size: 0.65rem; margin-left: 4px; }
+    .ex { color: var(--text-light); font-size: 0.65rem; margin-left: 4px; opacity: 0.5; }
+    .golfer-score { font-family: 'DM Mono', monospace; font-size: 0.8rem; min-width: 30px; text-align: right; }
+    .golfer-score.under { color: #5cb85c; }
+    .golfer-score.over { color: var(--cut); }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 600px) {
+      header { padding: 12px 16px; }
+      main { padding: 20px 14px; }
+      .tourn-selector-btn { font-size: 1.1rem; }
+      .tourn-dropdown { min-width: 260px; }
+      .team-golfers { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ════════ STATE 1: Viewing current tournament ════════ -->
+  <div id="state-current">
+    <header>
+      <div class="tourn-selector">
+        <button class="tourn-selector-btn" onclick="toggleDropdown(this)">
+          The Masters <span class="chevron">▼</span>
+        </button>
+        <div class="tourn-dropdown hidden" id="dropdown1">
+          <div class="tourn-dropdown-header">Current</div>
+          <div class="tourn-dropdown-item active">
+            <span class="tourn-item-name">The Masters</span>
+            <div class="tourn-item-meta">
+              <span class="tourn-item-year">2026</span>
+              <span class="tourn-item-live">Live</span>
+            </div>
+          </div>
+          <div class="tourn-dropdown-header">Past Tournaments</div>
+          <div class="tourn-dropdown-item" onclick="showHistory()">
+            <span class="tourn-item-name">The Masters</span>
+            <div class="tourn-item-meta">
+              <span class="tourn-item-year">2025</span>
+              <span class="tourn-item-winner">Won by Alice</span>
+            </div>
+          </div>
+          <div class="tourn-dropdown-item">
+            <span class="tourn-item-name">US Open</span>
+            <div class="tourn-item-meta">
+              <span class="tourn-item-year">2025</span>
+              <span class="tourn-item-winner">Won by Dave</span>
+            </div>
+          </div>
+          <div class="tourn-dropdown-item">
+            <span class="tourn-item-name">The Open Championship</span>
+            <div class="tourn-item-meta">
+              <span class="tourn-item-year">2024</span>
+              <span class="tourn-item-winner">Won by Bob</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="header-right">
+        <span class="badge dim">Steve</span>
+        <span class="badge dim">↻ 2:34 PM</span>
+      </div>
+    </header>
+
+    <main>
+      <div class="scoreboard">
+        <div class="team-card leader">
+          <div class="team-header">
+            <span class="team-rank gold">1</span>
+            <span class="team-name">Alice</span>
+            <span class="team-total under">-8</span>
+          </div>
+          <div class="team-golfers">
+            <div class="golfer-row"><span class="golfer-name">Scottie Scheffler<span class="star">★</span></span><span class="golfer-score under">-5</span></div>
+            <div class="golfer-row"><span class="golfer-name">Viktor Hovland<span class="star">★</span></span><span class="golfer-score under">-3</span></div>
+            <div class="golfer-row"><span class="golfer-name nc">Tommy Fleetwood<span class="ex">✕</span></span><span class="golfer-score over">+2</span></div>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="team-header">
+            <span class="team-rank">2</span>
+            <span class="team-name">Bob</span>
+            <span class="team-total under">-6</span>
+          </div>
+          <div class="team-golfers">
+            <div class="golfer-row"><span class="golfer-name">Rory McIlroy<span class="star">★</span></span><span class="golfer-score under">-4</span></div>
+            <div class="golfer-row"><span class="golfer-name">Collin Morikawa<span class="star">★</span></span><span class="golfer-score under">-2</span></div>
+            <div class="golfer-row"><span class="golfer-name nc">Shane Lowry<span class="ex">✕</span></span><span class="golfer-score over">+1</span></div>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="team-header">
+            <span class="team-rank">3</span>
+            <span class="team-name">Charlie</span>
+            <span class="team-total under">-3</span>
+          </div>
+          <div class="team-golfers">
+            <div class="golfer-row"><span class="golfer-name">Jon Rahm<span class="star">★</span></span><span class="golfer-score under">-2</span></div>
+            <div class="golfer-row"><span class="golfer-name">Ludvig Aberg<span class="star">★</span></span><span class="golfer-score under">-1</span></div>
+            <div class="golfer-row"><span class="golfer-name nc">Justin Thomas<span class="ex">✕</span></span><span class="golfer-score over">+4</span></div>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="team-header">
+            <span class="team-rank">4</span>
+            <span class="team-name">Dave</span>
+            <span class="team-total over">+2</span>
+          </div>
+          <div class="team-golfers">
+            <div class="golfer-row"><span class="golfer-name">Xander Schauffele<span class="star">★</span></span><span class="golfer-score even">E</span></div>
+            <div class="golfer-row"><span class="golfer-name">Bryson DeChambeau<span class="star">★</span></span><span class="golfer-score over">+2</span></div>
+            <div class="golfer-row"><span class="golfer-name nc">Dustin Johnson<span class="ex">✕</span></span><span class="golfer-score over">+6</span></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ════════ STATE 2: Viewing historical tournament ════════ -->
+  <div id="state-history" class="hidden">
+    <header>
+      <div class="tourn-selector">
+        <button class="tourn-selector-btn" onclick="toggleDropdown(this)">
+          The Masters — 2025 <span class="chevron">▼</span>
+        </button>
+        <div class="tourn-dropdown hidden" id="dropdown2">
+          <div class="tourn-dropdown-header">Current</div>
+          <div class="tourn-dropdown-item" onclick="showCurrent()">
+            <span class="tourn-item-name">The Masters</span>
+            <div class="tourn-item-meta">
+              <span class="tourn-item-year">2026</span>
+              <span class="tourn-item-live">Live</span>
+            </div>
+          </div>
+          <div class="tourn-dropdown-header">Past Tournaments</div>
+          <div class="tourn-dropdown-item active">
+            <span class="tourn-item-name">The Masters</span>
+            <div class="tourn-item-meta">
+              <span class="tourn-item-year">2025</span>
+              <span class="tourn-item-winner">Won by Alice</span>
+            </div>
+          </div>
+          <div class="tourn-dropdown-item">
+            <span class="tourn-item-name">US Open</span>
+            <div class="tourn-item-meta">
+              <span class="tourn-item-year">2025</span>
+              <span class="tourn-item-winner">Won by Dave</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="header-right">
+        <span class="badge dim">Steve</span>
+      </div>
+    </header>
+
+    <main>
+      <div class="history-banner">
+        <span class="history-banner-label">Archived</span>
+        <span class="history-banner-detail">The Masters 2025 — Final Standings</span>
+        <button class="history-banner-btn" onclick="showCurrent()">← Back to Live</button>
+      </div>
+
+      <div class="scoreboard">
+        <div class="team-card leader">
+          <div class="team-header">
+            <span class="team-rank gold">1</span>
+            <span class="team-name">Alice</span>
+            <span class="team-total under">-12</span>
+          </div>
+          <div class="team-golfers">
+            <div class="golfer-row"><span class="golfer-name">Scottie Scheffler<span class="star">★</span></span><span class="golfer-score under">-8</span></div>
+            <div class="golfer-row"><span class="golfer-name">Brooks Koepka<span class="star">★</span></span><span class="golfer-score under">-4</span></div>
+            <div class="golfer-row"><span class="golfer-name nc">Cameron Smith<span class="ex">✕</span></span><span class="golfer-score over">+3</span></div>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="team-header">
+            <span class="team-rank">2</span>
+            <span class="team-name">Dave</span>
+            <span class="team-total under">-9</span>
+          </div>
+          <div class="team-golfers">
+            <div class="golfer-row"><span class="golfer-name">Rory McIlroy<span class="star">★</span></span><span class="golfer-score under">-6</span></div>
+            <div class="golfer-row"><span class="golfer-name">Xander Schauffele<span class="star">★</span></span><span class="golfer-score under">-3</span></div>
+            <div class="golfer-row"><span class="golfer-name nc">Patrick Reed<span class="ex">✕</span></span><span class="golfer-score over">+5</span></div>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="team-header">
+            <span class="team-rank">3</span>
+            <span class="team-name">Bob</span>
+            <span class="team-total under">-4</span>
+          </div>
+          <div class="team-golfers">
+            <div class="golfer-row"><span class="golfer-name">Jon Rahm<span class="star">★</span></span><span class="golfer-score under">-3</span></div>
+            <div class="golfer-row"><span class="golfer-name">Collin Morikawa<span class="star">★</span></span><span class="golfer-score under">-1</span></div>
+            <div class="golfer-row"><span class="golfer-name nc">Justin Thomas<span class="ex">✕</span></span><span class="golfer-score over">+2</span></div>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="team-header">
+            <span class="team-rank">4</span>
+            <span class="team-name">Charlie</span>
+            <span class="team-total over">+1</span>
+          </div>
+          <div class="team-golfers">
+            <div class="golfer-row"><span class="golfer-name">Viktor Hovland<span class="star">★</span></span><span class="golfer-score even">E</span></div>
+            <div class="golfer-row"><span class="golfer-name">Ludvig Aberg<span class="star">★</span></span><span class="golfer-score over">+1</span></div>
+            <div class="golfer-row"><span class="golfer-name nc">Dustin Johnson<span class="ex">✕</span></span><span class="golfer-score over">+7</span></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function toggleDropdown(btn) {
+      btn.classList.toggle('open');
+      const dropdown = btn.nextElementSibling;
+      dropdown.classList.toggle('hidden');
+    }
+
+    function showHistory() {
+      document.getElementById('state-current').classList.add('hidden');
+      document.getElementById('state-history').classList.remove('hidden');
+      // close any open dropdowns
+      document.querySelectorAll('.tourn-dropdown').forEach(d => d.classList.add('hidden'));
+      document.querySelectorAll('.tourn-selector-btn').forEach(b => b.classList.remove('open'));
+    }
+
+    function showCurrent() {
+      document.getElementById('state-history').classList.add('hidden');
+      document.getElementById('state-current').classList.remove('hidden');
+      document.querySelectorAll('.tourn-dropdown').forEach(d => d.classList.add('hidden'));
+      document.querySelectorAll('.tourn-selector-btn').forEach(b => b.classList.remove('open'));
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.tourn-selector')) {
+        document.querySelectorAll('.tourn-dropdown').forEach(d => d.classList.add('hidden'));
+        document.querySelectorAll('.tourn-selector-btn').forEach(b => b.classList.remove('open'));
+      }
+    });
+  </script>
+</body>
+</html>

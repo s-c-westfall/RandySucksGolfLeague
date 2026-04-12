@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leaderboard Movement Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-deep: #1a2e1a;
+      --green-mid: #2d4a2d;
+      --gold: #c9a84c;
+      --gold-light: #e8c97a;
+      --cream: #f5f0e8;
+      --cream-dark: #e8e0d0;
+      --text-light: #8a8a7a;
+      --cut: #c0392b;
+      --move-up: #5cb85c;
+      --move-down: #c0392b;
+      --radius: 4px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--green-deep);
+      color: var(--cream);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(61,100,61,0.3) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(40,70,40,0.2) 0%, transparent 50%);
+    }
+    header {
+      border-bottom: 1px solid rgba(201,168,76,0.3);
+      padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,0,0,0.2); backdrop-filter: blur(8px);
+      position: sticky; top: 0; z-index: 100; gap: 12px;
+    }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--gold); }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .badge { font-family: 'DM Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 2px; }
+    .badge.dim { color: var(--text-light); background: none; border: 1px solid rgba(255,255,255,0.1); }
+    main { max-width: 1000px; margin: 0 auto; padding: 32px 24px; }
+    .tabs { display: flex; border-bottom: 1px solid rgba(201,168,76,0.2); margin-bottom: 24px; }
+    .tab { font-family: 'DM Mono', monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-light); padding: 10px 20px; cursor: pointer; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; }
+    .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    /* SCOREBOARD */
+    .scoreboard { display: flex; flex-direction: column; gap: 6px; }
+    .team-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .team-card.leader { border-color: var(--gold); background: rgba(201,168,76,0.04); }
+
+    /* Combined: left edge pip + inline arrow */
+    .team-header {
+      display: flex; align-items: stretch; padding: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .move-pip {
+      width: 3px;
+      flex-shrink: 0;
+      border-radius: 2px 0 0 0;
+    }
+    .move-pip.up { background: var(--move-up); }
+    .move-pip.down { background: var(--move-down); }
+    .move-pip.same { background: transparent; }
+
+    .team-header-inner {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px; flex: 1;
+    }
+    .rank-group {
+      display: flex; align-items: baseline; gap: 3px; min-width: 44px;
+    }
+    .team-rank {
+      font-family: 'Playfair Display', serif; font-size: 1.2rem;
+      color: var(--text-light);
+    }
+    .team-rank.gold { color: var(--gold); }
+
+    .move-indicator {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 1px;
+    }
+    .move-indicator.up { color: var(--move-up); }
+    .move-indicator.down { color: var(--move-down); }
+    .move-indicator.same { color: var(--text-light); font-size: 0.5rem; }
+
+    .team-name { flex: 1; font-weight: 500; font-size: 0.9rem; }
+    .team-total { font-family: 'Playfair Display', serif; font-size: 1.5rem; letter-spacing: -0.02em; font-weight: 700; }
+    .team-total.under { color: #5cb85c; }
+    .team-total.over { color: var(--cut); }
+    .team-total.even { color: var(--cream); }
+
+    .team-golfers { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .golfer-row { display: flex; align-items: center; padding: 3px 14px; border-right: 1px solid rgba(255,255,255,0.04); font-size: 0.8rem; gap: 6px; }
+    .golfer-name { flex: 1; font-weight: 500; }
+    .golfer-name.nc { color: var(--text-light); font-weight: 400; }
+    .star { color: var(--gold); font-size: 0.65rem; margin-left: 4px; }
+    .ex { color: var(--text-light); font-size: 0.65rem; margin-left: 4px; opacity: 0.5; }
+    .golfer-status { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-light); }
+    .golfer-score { font-family: 'DM Mono', monospace; font-size: 0.8rem; min-width: 30px; text-align: right; }
+    .golfer-score.under { color: #5cb85c; }
+    .golfer-score.over { color: var(--cut); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">The Masters</div>
+    <div class="header-right">
+      <span class="badge dim">Steve</span>
+      <span class="badge dim">↻ 2:34 PM</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="tabs">
+      <button class="tab">Draft Board</button>
+      <button class="tab active">Scoreboard</button>
+    </div>
+
+    <div class="scoreboard">
+
+      <!-- 1st — moved up 2 -->
+      <div class="team-card leader">
+        <div class="team-header">
+          <div class="move-pip up"></div>
+          <div class="team-header-inner">
+            <span class="rank-group"><span class="team-rank gold">1</span><span class="move-indicator up">▲2</span></span>
+            <span class="team-name">Alice</span>
+            <span class="team-total under">-8</span>
+          </div>
+        </div>
+        <div class="team-golfers">
+          <div class="golfer-row"><span class="golfer-name">Scottie Scheffler<span class="star">★</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score under">-5</span></div>
+          <div class="golfer-row"><span class="golfer-name">Viktor Hovland<span class="star">★</span></span><span class="golfer-status">Thru 12</span><span class="golfer-score under">-3</span></div>
+          <div class="golfer-row"><span class="golfer-name nc">Tommy Fleetwood<span class="ex">✕</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score over">+2</span></div>
+        </div>
+      </div>
+
+      <!-- 2nd — dropped 1 -->
+      <div class="team-card">
+        <div class="team-header">
+          <div class="move-pip down"></div>
+          <div class="team-header-inner">
+            <span class="rank-group"><span class="team-rank">2</span><span class="move-indicator down">▼1</span></span>
+            <span class="team-name">Bob</span>
+            <span class="team-total under">-6</span>
+          </div>
+        </div>
+        <div class="team-golfers">
+          <div class="golfer-row"><span class="golfer-name">Rory McIlroy<span class="star">★</span></span><span class="golfer-status">Thru 13</span><span class="golfer-score under">-4</span></div>
+          <div class="golfer-row"><span class="golfer-name">Collin Morikawa<span class="star">★</span></span><span class="golfer-status">Thru 15</span><span class="golfer-score under">-2</span></div>
+          <div class="golfer-row"><span class="golfer-name nc">Shane Lowry<span class="ex">✕</span></span><span class="golfer-status">Thru 13</span><span class="golfer-score over">+1</span></div>
+        </div>
+      </div>
+
+      <!-- 3rd — no change -->
+      <div class="team-card">
+        <div class="team-header">
+          <div class="move-pip same"></div>
+          <div class="team-header-inner">
+            <span class="rank-group"><span class="team-rank">3</span><span class="move-indicator same">–</span></span>
+            <span class="team-name">Charlie</span>
+            <span class="team-total under">-3</span>
+          </div>
+        </div>
+        <div class="team-golfers">
+          <div class="golfer-row"><span class="golfer-name">Jon Rahm<span class="star">★</span></span><span class="golfer-status">Thru 11</span><span class="golfer-score under">-2</span></div>
+          <div class="golfer-row"><span class="golfer-name">Ludvig Aberg<span class="star">★</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score under">-1</span></div>
+          <div class="golfer-row"><span class="golfer-name nc">Justin Thomas<span class="ex">✕</span></span><span class="golfer-status">Thru 12</span><span class="golfer-score over">+4</span></div>
+        </div>
+      </div>
+
+      <!-- 4th — dropped 1 -->
+      <div class="team-card">
+        <div class="team-header">
+          <div class="move-pip down"></div>
+          <div class="team-header-inner">
+            <span class="rank-group"><span class="team-rank">4</span><span class="move-indicator down">▼1</span></span>
+            <span class="team-name">Dave</span>
+            <span class="team-total over">+2</span>
+          </div>
+        </div>
+        <div class="team-golfers">
+          <div class="golfer-row"><span class="golfer-name">Xander Schauffele<span class="star">★</span></span><span class="golfer-status">Thru 13</span><span class="golfer-score even">E</span></div>
+          <div class="golfer-row"><span class="golfer-name">Bryson DeChambeau<span class="star">★</span></span><span class="golfer-status">Thru 10</span><span class="golfer-score over">+2</span></div>
+          <div class="golfer-row"><span class="golfer-name nc">Dustin Johnson<span class="ex">✕</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score over">+6</span></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</body>
+</html>

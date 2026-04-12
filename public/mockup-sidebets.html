@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Side Bets Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-deep: #1a2e1a;
+      --green-mid: #2d4a2d;
+      --gold: #c9a84c;
+      --gold-light: #e8c97a;
+      --cream: #f5f0e8;
+      --cream-dark: #e8e0d0;
+      --text-light: #8a8a7a;
+      --cut: #c0392b;
+      --move-up: #5cb85c;
+      --move-down: #c0392b;
+      --radius: 4px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--green-deep);
+      color: var(--cream);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(61,100,61,0.3) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(40,70,40,0.2) 0%, transparent 50%);
+    }
+    header {
+      border-bottom: 1px solid rgba(201,168,76,0.3);
+      padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,0,0,0.2); backdrop-filter: blur(8px);
+      position: sticky; top: 0; z-index: 100; gap: 12px;
+    }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--gold); }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .badge { font-family: 'DM Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 2px; }
+    .badge.dim { color: var(--text-light); background: none; border: 1px solid rgba(255,255,255,0.1); }
+    main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+    .tabs { display: flex; border-bottom: 1px solid rgba(201,168,76,0.2); margin-bottom: 24px; }
+    .tab { font-family: 'DM Mono', monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-light); padding: 10px 20px; cursor: pointer; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; }
+    .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    /* TWO-COLUMN LAYOUT */
+    .scoreboard-layout {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* SCOREBOARD (left) */
+    .scoreboard { display: flex; flex-direction: column; gap: 6px; }
+    .team-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius); overflow: hidden; }
+    .team-card.leader { border-color: var(--gold); background: rgba(201,168,76,0.04); }
+    .team-header { display: flex; align-items: center; padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); gap: 10px; }
+    .team-rank { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--text-light); min-width: 28px; }
+    .team-rank.gold { color: var(--gold); }
+    .team-name { flex: 1; font-weight: 500; font-size: 0.9rem; }
+    .team-total { font-family: 'Playfair Display', serif; font-size: 1.5rem; letter-spacing: -0.02em; font-weight: 700; }
+    .team-total.under { color: #5cb85c; }
+    .team-total.over { color: var(--cut); }
+    .team-total.even { color: var(--cream); }
+    .team-golfers { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+    .golfer-row { display: flex; align-items: center; padding: 3px 14px; border-right: 1px solid rgba(255,255,255,0.04); font-size: 0.8rem; gap: 6px; }
+    .golfer-name { flex: 1; font-weight: 500; }
+    .golfer-name.nc { color: var(--text-light); font-weight: 400; }
+    .star { color: var(--gold); font-size: 0.65rem; margin-left: 4px; }
+    .ex { color: var(--text-light); font-size: 0.65rem; margin-left: 4px; opacity: 0.5; }
+    .golfer-status { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-light); }
+    .golfer-score { font-family: 'DM Mono', monospace; font-size: 0.8rem; min-width: 30px; text-align: right; }
+    .golfer-score.under { color: #5cb85c; }
+    .golfer-score.over { color: var(--cut); }
+
+    /* ═══════ SIDE BETS PANEL (right) ═══════ */
+    .bets-panel {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(201,168,76,0.15);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .bets-panel-header {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      color: var(--gold-light);
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(201,168,76,0.15);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .bets-panel-header .bet-count {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--text-light);
+      background: rgba(255,255,255,0.06);
+      padding: 2px 6px;
+      border-radius: 2px;
+    }
+
+    /* Create bet form */
+    .bet-create {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .bet-create-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-light);
+      margin-bottom: 8px;
+    }
+    .bet-create-desc {
+      font-size: 0.78rem;
+      color: var(--text-light);
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+    .bet-create-row {
+      display: flex;
+      gap: 6px;
+    }
+    .bet-create-row input {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: var(--cream);
+      padding: 7px 10px;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      outline: none;
+      flex: 1;
+      min-width: 0;
+    }
+    .bet-create-row input::placeholder { color: var(--text-light); }
+    .bet-create-row input:focus { border-color: var(--gold); }
+    .btn-sm {
+      background: var(--gold);
+      color: var(--green-deep);
+      border: none;
+      padding: 7px 12px;
+      border-radius: var(--radius);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .btn-sm:hover { background: var(--gold-light); }
+
+    /* Section headers within panel */
+    .bets-section-header {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.55rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-light);
+      padding: 10px 16px 6px;
+      background: rgba(0,0,0,0.1);
+    }
+
+    /* Bet cards */
+    .bet-card {
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition: background 0.15s;
+    }
+    .bet-card:last-child { border-bottom: none; }
+
+    /* Open bet */
+    .bet-open .bet-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .bet-challenger {
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .bet-amount {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--gold);
+      background: rgba(201,168,76,0.1);
+      border: 1px solid rgba(201,168,76,0.2);
+      padding: 2px 8px;
+      border-radius: 2px;
+      white-space: nowrap;
+    }
+    .bet-challenge-text {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      margin-top: 4px;
+      font-style: italic;
+    }
+    .bet-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .btn-accept {
+      background: rgba(92,184,92,0.15);
+      border: 1px solid rgba(92,184,92,0.4);
+      color: var(--move-up);
+      padding: 4px 12px;
+      border-radius: 2px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .btn-accept:hover { background: rgba(92,184,92,0.25); }
+    .btn-cancel {
+      background: none;
+      border: 1px solid rgba(192,57,43,0.3);
+      color: rgba(192,57,43,0.7);
+      padding: 4px 12px;
+      border-radius: 2px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .btn-cancel:hover { background: rgba(192,57,43,0.1); }
+
+    /* Active bet */
+    .bet-active .bet-matchup {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .bet-player {
+      flex: 1;
+      text-align: center;
+      padding: 6px 4px;
+      border-radius: var(--radius);
+    }
+    .bet-player-name {
+      font-size: 0.82rem;
+      font-weight: 500;
+      display: block;
+    }
+    .bet-player-pos {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-light);
+      display: block;
+      margin-top: 2px;
+    }
+    .bet-player.leading {
+      background: rgba(92,184,92,0.08);
+      border: 1px solid rgba(92,184,92,0.2);
+    }
+    .bet-player.leading .bet-player-pos { color: var(--move-up); }
+    .bet-player.trailing {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .bet-vs {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--text-light);
+      flex-shrink: 0;
+    }
+    .bet-amount-row {
+      text-align: center;
+      margin-top: 6px;
+    }
+
+    /* Settled bet */
+    .bet-settled .bet-matchup {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .bet-player.winner {
+      background: rgba(201,168,76,0.08);
+      border: 1px solid rgba(201,168,76,0.25);
+    }
+    .bet-player.winner .bet-player-name { color: var(--gold-light); }
+    .bet-player.winner .bet-player-pos { color: var(--gold); }
+    .bet-player.loser {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      opacity: 0.5;
+    }
+    .bet-result {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      text-align: center;
+      margin-top: 6px;
+      padding: 3px 0;
+    }
+    .bet-result.won { color: var(--gold); }
+    .bet-result.push { color: var(--text-light); }
+
+    /* Bet timestamp */
+    .bet-time {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.52rem;
+      color: var(--text-light);
+      margin-top: 4px;
+      opacity: 0.6;
+    }
+
+    /* Empty state */
+    .bets-empty {
+      text-align: center;
+      padding: 20px 16px;
+      color: var(--text-light);
+      font-size: 0.8rem;
+    }
+
+    /* View toggle */
+    .view-toggle {
+      position: fixed; bottom: 20px; right: 20px; z-index: 200;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .view-toggle button {
+      background: var(--gold); color: var(--green-deep); border: none;
+      padding: 8px 16px; border-radius: var(--radius); cursor: pointer;
+      font-family: 'DM Mono', monospace; font-size: 0.68rem; text-transform: uppercase;
+    }
+    .view-toggle button:hover { background: var(--gold-light); }
+    .hidden { display: none !important; }
+
+    @media (max-width: 768px) {
+      .scoreboard-layout {
+        grid-template-columns: 1fr;
+      }
+      /* On mobile: hide side panel from grid, show via tab instead */
+      .scoreboard-layout .bets-panel { display: none; }
+      .mobile-bets-tab { display: block !important; }
+    }
+
+    /* Mobile bets tab content — hidden on desktop */
+    .mobile-bets-tab { display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">The Masters</div>
+    <div class="header-right">
+      <span class="badge dim">Steve</span>
+      <span class="badge dim">↻ 2:34 PM</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="tabs" id="shared-tabs">
+      <button class="tab">Draft Board</button>
+      <button class="tab active">Scoreboard</button>
+    </div>
+
+    <!-- ════════ VIEW 1: Mid-tournament with mix of bet states ════════ -->
+    <div id="view-mix">
+      <div class="scoreboard-layout">
+
+        <!-- LEFT: Scoreboard -->
+        <div class="scoreboard">
+          <div class="team-card leader">
+            <div class="team-header">
+              <span class="team-rank gold">1</span>
+              <span class="team-name">Alice</span>
+              <span class="team-total under">-8</span>
+            </div>
+            <div class="team-golfers">
+              <div class="golfer-row"><span class="golfer-name">Scottie Scheffler<span class="star">★</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score under">-5</span></div>
+              <div class="golfer-row"><span class="golfer-name">Viktor Hovland<span class="star">★</span></span><span class="golfer-status">Thru 12</span><span class="golfer-score under">-3</span></div>
+              <div class="golfer-row"><span class="golfer-name nc">Tommy Fleetwood<span class="ex">✕</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score over">+2</span></div>
+            </div>
+          </div>
+          <div class="team-card">
+            <div class="team-header">
+              <span class="team-rank">2</span>
+              <span class="team-name">Bob</span>
+              <span class="team-total under">-6</span>
+            </div>
+            <div class="team-golfers">
+              <div class="golfer-row"><span class="golfer-name">Rory McIlroy<span class="star">★</span></span><span class="golfer-status">Thru 13</span><span class="golfer-score under">-4</span></div>
+              <div class="golfer-row"><span class="golfer-name">Collin Morikawa<span class="star">★</span></span><span class="golfer-status">Thru 15</span><span class="golfer-score under">-2</span></div>
+              <div class="golfer-row"><span class="golfer-name nc">Shane Lowry<span class="ex">✕</span></span><span class="golfer-status">Thru 13</span><span class="golfer-score over">+1</span></div>
+            </div>
+          </div>
+          <div class="team-card">
+            <div class="team-header">
+              <span class="team-rank">3</span>
+              <span class="team-name">Charlie</span>
+              <span class="team-total under">-3</span>
+            </div>
+            <div class="team-golfers">
+              <div class="golfer-row"><span class="golfer-name">Jon Rahm<span class="star">★</span></span><span class="golfer-status">Thru 11</span><span class="golfer-score under">-2</span></div>
+              <div class="golfer-row"><span class="golfer-name">Ludvig Aberg<span class="star">★</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score under">-1</span></div>
+              <div class="golfer-row"><span class="golfer-name nc">Justin Thomas<span class="ex">✕</span></span><span class="golfer-status">Thru 12</span><span class="golfer-score over">+4</span></div>
+            </div>
+          </div>
+          <div class="team-card">
+            <div class="team-header">
+              <span class="team-rank">4</span>
+              <span class="team-name">Dave</span>
+              <span class="team-total over">+2</span>
+            </div>
+            <div class="team-golfers">
+              <div class="golfer-row"><span class="golfer-name">Xander Schauffele<span class="star">★</span></span><span class="golfer-status">Thru 13</span><span class="golfer-score even">E</span></div>
+              <div class="golfer-row"><span class="golfer-name">Bryson DeChambeau<span class="star">★</span></span><span class="golfer-status">Thru 10</span><span class="golfer-score over">+2</span></div>
+              <div class="golfer-row"><span class="golfer-name nc">Dustin Johnson<span class="ex">✕</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score over">+6</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Side Bets Panel -->
+        <div class="bets-panel">
+          <div class="bets-panel-header">
+            Side Bets
+            <span class="bet-count">4 bets</span>
+          </div>
+
+          <!-- Create bet -->
+          <div class="bet-create">
+            <div class="bet-create-label">Post a challenge</div>
+            <div class="bet-create-desc">Whoever accepts bets they finish above you</div>
+            <div class="bet-create-row">
+              <input placeholder="Amount (e.g. $5)" />
+              <button class="btn-sm">Post</button>
+            </div>
+          </div>
+
+          <!-- Open bets -->
+          <div class="bets-section-header">Open Challenges</div>
+
+          <div class="bet-card bet-open">
+            <div class="bet-top">
+              <span class="bet-challenger">Dave</span>
+              <span class="bet-amount">$5</span>
+            </div>
+            <div class="bet-challenge-text">"I'll finish higher than you"</div>
+            <div class="bet-actions">
+              <button class="btn-accept">Accept</button>
+            </div>
+            <div class="bet-time">Posted 2h ago</div>
+          </div>
+
+          <div class="bet-card bet-open">
+            <div class="bet-top">
+              <span class="bet-challenger">Charlie</span>
+              <span class="bet-amount">a beer</span>
+            </div>
+            <div class="bet-challenge-text">"I'll finish higher than you"</div>
+            <div class="bet-actions">
+              <button class="btn-accept">Accept</button>
+            </div>
+            <div class="bet-time">Posted 4h ago</div>
+          </div>
+
+          <!-- Active bets -->
+          <div class="bets-section-header">Active Bets</div>
+
+          <div class="bet-card bet-active">
+            <div class="bet-matchup">
+              <div class="bet-player leading">
+                <span class="bet-player-name">Alice</span>
+                <span class="bet-player-pos">1st</span>
+              </div>
+              <span class="bet-vs">vs</span>
+              <div class="bet-player trailing">
+                <span class="bet-player-name">Bob</span>
+                <span class="bet-player-pos">2nd</span>
+              </div>
+            </div>
+            <div class="bet-amount-row">
+              <span class="bet-amount">$10</span>
+            </div>
+            <div class="bet-time">Accepted 1d ago</div>
+          </div>
+
+          <!-- Settled bets -->
+          <div class="bets-section-header">Settled</div>
+
+          <div class="bet-card bet-settled">
+            <div class="bet-matchup">
+              <div class="bet-player winner">
+                <span class="bet-player-name">Steve</span>
+                <span class="bet-player-pos">2nd</span>
+              </div>
+              <span class="bet-vs">vs</span>
+              <div class="bet-player loser">
+                <span class="bet-player-name">Charlie</span>
+                <span class="bet-player-pos">4th</span>
+              </div>
+            </div>
+            <div class="bet-amount-row">
+              <span class="bet-amount">$5</span>
+            </div>
+            <div class="bet-result won">Steve wins</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ VIEW 2: Empty state (no bets yet) ════════ -->
+    <div id="view-empty" class="hidden">
+      <div class="scoreboard-layout">
+        <div class="scoreboard">
+          <div class="team-card leader">
+            <div class="team-header">
+              <span class="team-rank gold">1</span>
+              <span class="team-name">Alice</span>
+              <span class="team-total under">-8</span>
+            </div>
+            <div class="team-golfers">
+              <div class="golfer-row"><span class="golfer-name">Scottie Scheffler<span class="star">★</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score under">-5</span></div>
+              <div class="golfer-row"><span class="golfer-name">Viktor Hovland<span class="star">★</span></span><span class="golfer-status">Thru 12</span><span class="golfer-score under">-3</span></div>
+              <div class="golfer-row"><span class="golfer-name nc">Tommy Fleetwood<span class="ex">✕</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score over">+2</span></div>
+            </div>
+          </div>
+          <div class="team-card">
+            <div class="team-header"><span class="team-rank">2</span><span class="team-name">Bob</span><span class="team-total under">-6</span></div>
+            <div class="team-golfers">
+              <div class="golfer-row"><span class="golfer-name">Rory McIlroy<span class="star">★</span></span><span class="golfer-status">Thru 13</span><span class="golfer-score under">-4</span></div>
+              <div class="golfer-row"><span class="golfer-name">Collin Morikawa<span class="star">★</span></span><span class="golfer-status">Thru 15</span><span class="golfer-score under">-2</span></div>
+              <div class="golfer-row"><span class="golfer-name nc">Shane Lowry<span class="ex">✕</span></span><span class="golfer-status">Thru 13</span><span class="golfer-score over">+1</span></div>
+            </div>
+          </div>
+          <div class="team-card">
+            <div class="team-header"><span class="team-rank">3</span><span class="team-name">Charlie</span><span class="team-total under">-3</span></div>
+            <div class="team-golfers">
+              <div class="golfer-row"><span class="golfer-name">Jon Rahm<span class="star">★</span></span><span class="golfer-status">Thru 11</span><span class="golfer-score under">-2</span></div>
+              <div class="golfer-row"><span class="golfer-name">Ludvig Aberg<span class="star">★</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score under">-1</span></div>
+              <div class="golfer-row"><span class="golfer-name nc">Justin Thomas<span class="ex">✕</span></span><span class="golfer-status">Thru 12</span><span class="golfer-score over">+4</span></div>
+            </div>
+          </div>
+          <div class="team-card">
+            <div class="team-header"><span class="team-rank">4</span><span class="team-name">Dave</span><span class="team-total over">+2</span></div>
+            <div class="team-golfers">
+              <div class="golfer-row"><span class="golfer-name">Xander Schauffele<span class="star">★</span></span><span class="golfer-status">Thru 13</span><span class="golfer-score even">E</span></div>
+              <div class="golfer-row"><span class="golfer-name">Bryson DeChambeau<span class="star">★</span></span><span class="golfer-status">Thru 10</span><span class="golfer-score over">+2</span></div>
+              <div class="golfer-row"><span class="golfer-name nc">Dustin Johnson<span class="ex">✕</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score over">+6</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bets-panel">
+          <div class="bets-panel-header">Side Bets</div>
+          <div class="bet-create">
+            <div class="bet-create-label">Post a challenge</div>
+            <div class="bet-create-desc">Whoever accepts bets they finish above you</div>
+            <div class="bet-create-row">
+              <input placeholder="Amount (e.g. $5)" />
+              <button class="btn-sm">Post</button>
+            </div>
+          </div>
+          <div class="bets-empty">
+            No side bets yet.<br />Be the first to post a challenge.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ VIEW 3: Your own open bet (shows cancel) ════════ -->
+    <div id="view-own" class="hidden">
+      <div class="scoreboard-layout">
+        <div class="scoreboard">
+          <div class="team-card leader">
+            <div class="team-header"><span class="team-rank gold">1</span><span class="team-name">Alice</span><span class="team-total under">-8</span></div>
+            <div class="team-golfers">
+              <div class="golfer-row"><span class="golfer-name">Scottie Scheffler<span class="star">★</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score under">-5</span></div>
+              <div class="golfer-row"><span class="golfer-name">Viktor Hovland<span class="star">★</span></span><span class="golfer-status">Thru 12</span><span class="golfer-score under">-3</span></div>
+              <div class="golfer-row"><span class="golfer-name nc">Tommy Fleetwood<span class="ex">✕</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score over">+2</span></div>
+            </div>
+          </div>
+          <div class="team-card">
+            <div class="team-header"><span class="team-rank">2</span><span class="team-name">Bob</span><span class="team-total under">-6</span></div>
+            <div class="team-golfers">
+              <div class="golfer-row"><span class="golfer-name">Rory McIlroy<span class="star">★</span></span><span class="golfer-status">Thru 13</span><span class="golfer-score under">-4</span></div>
+              <div class="golfer-row"><span class="golfer-name">Collin Morikawa<span class="star">★</span></span><span class="golfer-status">Thru 15</span><span class="golfer-score under">-2</span></div>
+              <div class="golfer-row"><span class="golfer-name nc">Shane Lowry<span class="ex">✕</span></span><span class="golfer-status">Thru 13</span><span class="golfer-score over">+1</span></div>
+            </div>
+          </div>
+          <div class="team-card">
+            <div class="team-header"><span class="team-rank">3</span><span class="team-name">Steve</span><span class="team-total under">-3</span></div>
+            <div class="team-golfers">
+              <div class="golfer-row"><span class="golfer-name">Jon Rahm<span class="star">★</span></span><span class="golfer-status">Thru 11</span><span class="golfer-score under">-2</span></div>
+              <div class="golfer-row"><span class="golfer-name">Ludvig Aberg<span class="star">★</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score under">-1</span></div>
+              <div class="golfer-row"><span class="golfer-name nc">Justin Thomas<span class="ex">✕</span></span><span class="golfer-status">Thru 12</span><span class="golfer-score over">+4</span></div>
+            </div>
+          </div>
+          <div class="team-card">
+            <div class="team-header"><span class="team-rank">4</span><span class="team-name">Dave</span><span class="team-total over">+2</span></div>
+            <div class="team-golfers">
+              <div class="golfer-row"><span class="golfer-name">Xander Schauffele<span class="star">★</span></span><span class="golfer-status">Thru 13</span><span class="golfer-score even">E</span></div>
+              <div class="golfer-row"><span class="golfer-name">Bryson DeChambeau<span class="star">★</span></span><span class="golfer-status">Thru 10</span><span class="golfer-score over">+2</span></div>
+              <div class="golfer-row"><span class="golfer-name nc">Dustin Johnson<span class="ex">✕</span></span><span class="golfer-status">Thru 14</span><span class="golfer-score over">+6</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bets-panel">
+          <div class="bets-panel-header">
+            Side Bets
+            <span class="bet-count">1 bet</span>
+          </div>
+          <div class="bet-create">
+            <div class="bet-create-label">Post a challenge</div>
+            <div class="bet-create-desc">Whoever accepts bets they finish above you</div>
+            <div class="bet-create-row">
+              <input placeholder="Amount (e.g. $5)" />
+              <button class="btn-sm">Post</button>
+            </div>
+          </div>
+
+          <div class="bets-section-header">Your Open Challenges</div>
+          <div class="bet-card bet-open">
+            <div class="bet-top">
+              <span class="bet-challenger">Steve <span style="font-size:0.7rem;color:var(--text-light)">(you)</span></span>
+              <span class="bet-amount">$5</span>
+            </div>
+            <div class="bet-challenge-text">"I'll finish higher than you"</div>
+            <div style="font-size:0.72rem;color:var(--text-light);margin-top:6px;">Waiting for a challenger...</div>
+            <div class="bet-actions">
+              <button class="btn-cancel">Withdraw</button>
+            </div>
+            <div class="bet-time">Posted 30m ago · Can withdraw until accepted</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ VIEW 4: Mobile — Bets tab selected ════════ -->
+    <div id="view-mobile" class="hidden">
+      <div class="tabs">
+        <button class="tab">Draft Board</button>
+        <button class="tab">Scoreboard</button>
+        <button class="tab active">Side Bets</button>
+      </div>
+
+      <!-- Full-width bets panel (no scoreboard visible) -->
+      <div class="bets-panel" style="border:none;background:none;">
+        <div class="bets-panel-header" style="padding-left:0;">
+          Side Bets
+          <span class="bet-count">4 bets</span>
+        </div>
+
+        <div class="bet-create" style="padding-left:0;padding-right:0;border-bottom-color:rgba(201,168,76,0.15);">
+          <div class="bet-create-label">Post a challenge</div>
+          <div class="bet-create-desc">Whoever accepts bets they finish above you</div>
+          <div class="bet-create-row">
+            <input placeholder="Amount (e.g. $5)" />
+            <button class="btn-sm">Post</button>
+          </div>
+        </div>
+
+        <div class="bets-section-header" style="padding-left:0;background:none;">Open Challenges</div>
+
+        <div class="bet-card bet-open" style="padding-left:0;">
+          <div class="bet-top">
+            <span class="bet-challenger">Dave</span>
+            <span class="bet-amount">$5</span>
+          </div>
+          <div class="bet-challenge-text">"I'll finish higher than you"</div>
+          <div class="bet-actions">
+            <button class="btn-accept">Accept</button>
+          </div>
+          <div class="bet-time">Posted 2h ago</div>
+        </div>
+
+        <div class="bet-card bet-open" style="padding-left:0;">
+          <div class="bet-top">
+            <span class="bet-challenger">Charlie</span>
+            <span class="bet-amount">a beer</span>
+          </div>
+          <div class="bet-challenge-text">"I'll finish higher than you"</div>
+          <div class="bet-actions">
+            <button class="btn-accept">Accept</button>
+          </div>
+          <div class="bet-time">Posted 4h ago</div>
+        </div>
+
+        <div class="bets-section-header" style="padding-left:0;background:none;">Active Bets</div>
+
+        <div class="bet-card bet-active" style="padding-left:0;">
+          <div class="bet-matchup">
+            <div class="bet-player leading">
+              <span class="bet-player-name">Alice</span>
+              <span class="bet-player-pos">1st</span>
+            </div>
+            <span class="bet-vs">vs</span>
+            <div class="bet-player trailing">
+              <span class="bet-player-name">Bob</span>
+              <span class="bet-player-pos">2nd</span>
+            </div>
+          </div>
+          <div class="bet-amount-row">
+            <span class="bet-amount">$10</span>
+          </div>
+          <div class="bet-time">Accepted 1d ago</div>
+        </div>
+
+        <div class="bets-section-header" style="padding-left:0;background:none;">Settled</div>
+
+        <div class="bet-card bet-settled" style="padding-left:0;">
+          <div class="bet-matchup">
+            <div class="bet-player winner">
+              <span class="bet-player-name">Steve</span>
+              <span class="bet-player-pos">2nd</span>
+            </div>
+            <span class="bet-vs">vs</span>
+            <div class="bet-player loser">
+              <span class="bet-player-name">Charlie</span>
+              <span class="bet-player-pos">4th</span>
+            </div>
+          </div>
+          <div class="bet-amount-row">
+            <span class="bet-amount">$5</span>
+          </div>
+          <div class="bet-result won">Steve wins</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div class="view-toggle">
+    <button onclick="show('view-mix')">Desktop: All States</button>
+    <button onclick="show('view-empty')">Desktop: Empty</button>
+    <button onclick="show('view-own')">Desktop: Your Bet</button>
+    <button onclick="show('view-mobile')">Mobile: Bets Tab</button>
+  </div>
+
+  <script>
+    function show(id) {
+      document.querySelectorAll('[id^="view-"]').forEach(v => v.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+      // Hide shared tabs when mobile view is active (it has its own)
+      document.getElementById('shared-tabs').style.display = id === 'view-mobile' ? 'none' : '';
+      window.scrollTo(0, 0);
+    }
+  </script>
+</body>
+</html>

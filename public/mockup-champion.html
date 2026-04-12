@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Champion Display Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-deep: #1a2e1a;
+      --green-mid: #2d4a2d;
+      --gold: #c9a84c;
+      --gold-light: #e8c97a;
+      --cream: #f5f0e8;
+      --cream-dark: #e8e0d0;
+      --text-light: #8a8a7a;
+      --cut: #c0392b;
+      --radius: 4px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--green-deep);
+      color: var(--cream);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(61,100,61,0.3) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(40,70,40,0.2) 0%, transparent 50%);
+    }
+    header {
+      border-bottom: 1px solid rgba(201,168,76,0.3);
+      padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,0,0,0.2); backdrop-filter: blur(8px);
+      position: sticky; top: 0; z-index: 100; gap: 12px;
+    }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--gold); }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .badge { font-family: 'DM Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 2px; }
+    .badge.dim { color: var(--text-light); background: none; border: 1px solid rgba(255,255,255,0.1); }
+    main { max-width: 1000px; margin: 0 auto; padding: 32px 24px; }
+    .tabs { display: flex; border-bottom: 1px solid rgba(201,168,76,0.2); margin-bottom: 24px; }
+    .tab { font-family: 'DM Mono', monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-light); padding: 10px 20px; cursor: pointer; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; }
+    .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    /* ═══════ CHAMPION BANNER ═══════ */
+    .champion-banner {
+      text-align: center;
+      padding: 32px 24px;
+      margin-bottom: 24px;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.12) 0%, transparent 70%),
+        rgba(201,168,76,0.04);
+      border: 1px solid rgba(201,168,76,0.35);
+      border-radius: var(--radius);
+      position: relative;
+      overflow: hidden;
+    }
+    .champion-banner::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    .champion-trophy {
+      font-size: 2.4rem;
+      margin-bottom: 8px;
+      line-height: 1;
+    }
+    .champion-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      color: var(--gold);
+      margin-bottom: 12px;
+    }
+    .champion-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      margin-bottom: 4px;
+    }
+    .champion-score {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #5cb85c;
+      margin-bottom: 20px;
+    }
+
+    .champion-divider {
+      width: 60px;
+      height: 1px;
+      background: rgba(201,168,76,0.3);
+      margin: 0 auto 20px;
+    }
+
+    .venmo-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .venmo-pay-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-light);
+    }
+    .venmo-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0,141,237,0.1);
+      border: 1px solid rgba(0,141,237,0.3);
+      color: #3d95ce;
+      padding: 8px 20px;
+      border-radius: var(--radius);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.78rem;
+      text-decoration: none;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .venmo-link:hover { background: rgba(0,141,237,0.18); }
+    .venmo-link-icon {
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .venmo-handle {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-light);
+      margin-top: 2px;
+    }
+
+    /* No Venmo variant */
+    .champion-banner-simple {
+      padding-bottom: 28px;
+    }
+    .champion-banner-simple .champion-score {
+      margin-bottom: 0;
+    }
+
+    /* SCOREBOARD (abbreviated) */
+    .scoreboard { display: flex; flex-direction: column; gap: 6px; }
+    .team-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius); overflow: hidden; }
+    .team-card.leader { border-color: var(--gold); background: rgba(201,168,76,0.04); }
+    .team-header { display: flex; align-items: center; padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); gap: 10px; }
+    .team-rank { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--text-light); min-width: 28px; }
+    .team-rank.gold { color: var(--gold); }
+    .team-name { flex: 1; font-weight: 500; font-size: 0.9rem; }
+    .team-total { font-family: 'Playfair Display', serif; font-size: 1.5rem; letter-spacing: -0.02em; font-weight: 700; }
+    .team-total.under { color: #5cb85c; }
+    .team-total.over { color: var(--cut); }
+    .team-total.even { color: var(--cream); }
+    .team-golfers { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .golfer-row { display: flex; align-items: center; padding: 3px 14px; border-right: 1px solid rgba(255,255,255,0.04); font-size: 0.8rem; gap: 6px; }
+    .golfer-name { flex: 1; font-weight: 500; }
+    .golfer-name.nc { color: var(--text-light); font-weight: 400; }
+    .star { color: var(--gold); font-size: 0.65rem; margin-left: 4px; }
+    .ex { color: var(--text-light); font-size: 0.65rem; margin-left: 4px; opacity: 0.5; }
+    .golfer-score { font-family: 'DM Mono', monospace; font-size: 0.8rem; min-width: 30px; text-align: right; }
+    .golfer-score.under { color: #5cb85c; }
+    .golfer-score.over { color: var(--cut); }
+
+    .complete-banner {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--gold-light);
+      background: rgba(201,168,76,0.08);
+      border: 1px solid rgba(201,168,76,0.2);
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+      letter-spacing: 0.05em;
+    }
+
+    /* Animation */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .champion-banner { animation: fadeUp 0.6s ease-out; }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .champion-name {
+      background: linear-gradient(90deg, var(--gold-light), #fff5d4, var(--gold-light));
+      background-size: 200% 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 3s ease-in-out infinite;
+    }
+
+    .hidden { display: none !important; }
+    .view-toggle {
+      position: fixed; bottom: 20px; right: 20px; z-index: 200;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .view-toggle button {
+      background: var(--gold); color: var(--green-deep); border: none;
+      padding: 8px 16px; border-radius: var(--radius); cursor: pointer;
+      font-family: 'DM Mono', monospace; font-size: 0.68rem; text-transform: uppercase;
+    }
+    .view-toggle button:hover { background: var(--gold-light); }
+
+    @media (max-width: 600px) {
+      header { padding: 12px 16px; }
+      main { padding: 20px 14px; }
+      .champion-name { font-size: 1.6rem; }
+      .champion-score { font-size: 1.4rem; }
+      .champion-banner { padding: 24px 16px; }
+      .venmo-qr { width: 110px; height: 110px; }
+      .team-golfers { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">The Masters</div>
+    <div class="header-right">
+      <span class="badge dim">Steve</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="tabs">
+      <button class="tab">Draft Board</button>
+      <button class="tab active">Scoreboard</button>
+    </div>
+
+    <!-- ════════ VIEW 1: Champion with Venmo ════════ -->
+    <div id="view-venmo">
+      <div class="champion-banner">
+        <div class="champion-trophy">&#127942;</div>
+        <div class="champion-label">Champion</div>
+        <div class="champion-name">Alice</div>
+        <div class="champion-score">-12</div>
+
+        <div class="champion-divider"></div>
+
+        <div class="venmo-section">
+          <a class="venmo-link" href="https://account.venmo.com/pay?recipients=alice-smith">
+            <span class="venmo-link-icon">V</span>
+            Pay Alice on Venmo
+          </a>
+        </div>
+      </div>
+
+      <div class="scoreboard">
+        <div class="team-card leader">
+          <div class="team-header">
+            <span class="team-rank gold">1</span>
+            <span class="team-name">Alice</span>
+            <span class="team-total under">-12</span>
+          </div>
+          <div class="team-golfers">
+            <div class="golfer-row"><span class="golfer-name">Scottie Scheffler<span class="star">★</span></span><span class="golfer-score under">-8</span></div>
+            <div class="golfer-row"><span class="golfer-name">Brooks Koepka<span class="star">★</span></span><span class="golfer-score under">-4</span></div>
+            <div class="golfer-row"><span class="golfer-name nc">Cameron Smith<span class="ex">✕</span></span><span class="golfer-score over">+3</span></div>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="team-header">
+            <span class="team-rank">2</span>
+            <span class="team-name">Dave</span>
+            <span class="team-total under">-9</span>
+          </div>
+          <div class="team-golfers">
+            <div class="golfer-row"><span class="golfer-name">Rory McIlroy<span class="star">★</span></span><span class="golfer-score under">-6</span></div>
+            <div class="golfer-row"><span class="golfer-name">Xander Schauffele<span class="star">★</span></span><span class="golfer-score under">-3</span></div>
+            <div class="golfer-row"><span class="golfer-name nc">Patrick Reed<span class="ex">✕</span></span><span class="golfer-score over">+5</span></div>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="team-header">
+            <span class="team-rank">3</span>
+            <span class="team-name">Bob</span>
+            <span class="team-total under">-4</span>
+          </div>
+          <div class="team-golfers">
+            <div class="golfer-row"><span class="golfer-name">Jon Rahm<span class="star">★</span></span><span class="golfer-score under">-3</span></div>
+            <div class="golfer-row"><span class="golfer-name">Collin Morikawa<span class="star">★</span></span><span class="golfer-score under">-1</span></div>
+            <div class="golfer-row"><span class="golfer-name nc">Justin Thomas<span class="ex">✕</span></span><span class="golfer-score over">+2</span></div>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="team-header">
+            <span class="team-rank">4</span>
+            <span class="team-name">Charlie</span>
+            <span class="team-total over">+1</span>
+          </div>
+          <div class="team-golfers">
+            <div class="golfer-row"><span class="golfer-name">Viktor Hovland<span class="star">★</span></span><span class="golfer-score even">E</span></div>
+            <div class="golfer-row"><span class="golfer-name">Ludvig Aberg<span class="star">★</span></span><span class="golfer-score over">+1</span></div>
+            <div class="golfer-row"><span class="golfer-name nc">Dustin Johnson<span class="ex">✕</span></span><span class="golfer-score over">+7</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ VIEW 2: Champion without Venmo ════════ -->
+    <div id="view-no-venmo" class="hidden">
+      <div class="champion-banner champion-banner-simple">
+        <div class="champion-trophy">&#127942;</div>
+        <div class="champion-label">Champion</div>
+        <div class="champion-name">Alice</div>
+        <div class="champion-score">-12</div>
+      </div>
+
+      <div class="scoreboard">
+        <div class="team-card leader">
+          <div class="team-header">
+            <span class="team-rank gold">1</span>
+            <span class="team-name">Alice</span>
+            <span class="team-total under">-12</span>
+          </div>
+          <div class="team-golfers">
+            <div class="golfer-row"><span class="golfer-name">Scottie Scheffler<span class="star">★</span></span><span class="golfer-score under">-8</span></div>
+            <div class="golfer-row"><span class="golfer-name">Brooks Koepka<span class="star">★</span></span><span class="golfer-score under">-4</span></div>
+            <div class="golfer-row"><span class="golfer-name nc">Cameron Smith<span class="ex">✕</span></span><span class="golfer-score over">+3</span></div>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="team-header"><span class="team-rank">2</span><span class="team-name">Dave</span><span class="team-total under">-9</span></div>
+          <div class="team-golfers">
+            <div class="golfer-row"><span class="golfer-name">Rory McIlroy<span class="star">★</span></span><span class="golfer-score under">-6</span></div>
+            <div class="golfer-row"><span class="golfer-name">Xander Schauffele<span class="star">★</span></span><span class="golfer-score under">-3</span></div>
+            <div class="golfer-row"><span class="golfer-name nc">Patrick Reed<span class="ex">✕</span></span><span class="golfer-score over">+5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div class="view-toggle">
+    <button onclick="show('view-venmo')">With Venmo</button>
+    <button onclick="show('view-no-venmo')">No Venmo</button>
+  </div>
+
+  <script>
+    function show(id) {
+      document.querySelectorAll('[id^="view-"]').forEach(v => v.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+      window.scrollTo(0, 0);
+    }
+  </script>
+</body>
+</html>

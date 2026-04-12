@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Last Pick Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-deep: #1a2e1a;
+      --green-mid: #2d4a2d;
+      --gold: #c9a84c;
+      --gold-light: #e8c97a;
+      --cream: #f5f0e8;
+      --cream-dark: #e8e0d0;
+      --text-light: #8a8a7a;
+      --cut: #c0392b;
+      --radius: 4px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--green-deep);
+      color: var(--cream);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(61,100,61,0.3) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(40,70,40,0.2) 0%, transparent 50%);
+    }
+    header {
+      border-bottom: 1px solid rgba(201,168,76,0.3);
+      padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,0,0,0.2);
+      backdrop-filter: blur(8px);
+      position: sticky; top: 0; z-index: 100; gap: 12px;
+    }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--gold); }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .badge {
+      font-family: 'DM Mono', monospace; font-size: 0.68rem; text-transform: uppercase;
+      letter-spacing: 0.08em; padding: 4px 10px; border-radius: 2px;
+    }
+    .badge.dim { color: var(--text-light); background: none; border: 1px solid rgba(255,255,255,0.1); }
+    main { max-width: 1000px; margin: 0 auto; padding: 32px 24px; }
+
+    /* TABS */
+    .tabs { display: flex; border-bottom: 1px solid rgba(201,168,76,0.2); margin-bottom: 24px; }
+    .tab {
+      font-family: 'DM Mono', monospace; font-size: 0.7rem; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--text-light); padding: 10px 20px; cursor: pointer;
+      border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none;
+    }
+    .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    /* SEARCH PANEL */
+    .panel {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(201,168,76,0.2);
+      border-radius: var(--radius); padding: 24px 28px; margin-bottom: 20px;
+    }
+    .panel h3 {
+      font-family: 'DM Mono', monospace; font-size: 0.7rem; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--gold); margin-bottom: 12px;
+    }
+    input {
+      background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.12);
+      color: var(--cream); padding: 8px 11px; border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif; font-size: 0.88rem; outline: none; width: 100%;
+    }
+    input::placeholder { color: var(--text-light); }
+
+    /* ── LAST PICK BANNER — OPTION A: Inline callout ── */
+    .last-pick-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(201,168,76,0.06);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-left: 3px solid var(--gold);
+      border-radius: var(--radius);
+      padding: 10px 16px;
+      margin-bottom: 20px;
+      animation: fadeIn 0.4s ease-out;
+    }
+    .last-pick-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+      white-space: nowrap;
+    }
+    .last-pick-detail {
+      font-size: 0.87rem;
+      color: var(--cream);
+    }
+    .last-pick-detail strong {
+      color: var(--gold-light);
+      font-weight: 500;
+    }
+    .last-pick-round {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-light);
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* SECTION TITLE */
+    .section-title {
+      font-family: 'Playfair Display', serif; font-size: 0.95rem; color: var(--gold-light);
+      margin-bottom: 12px; display: flex; align-items: center; gap: 12px;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: rgba(201,168,76,0.15); }
+
+    /* PICK LIST */
+    .pick-list { display: flex; flex-direction: column; gap: 6px; }
+    .pick-row {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius); padding: 10px 14px; font-size: 0.87rem;
+    }
+    .pick-row.current {
+      border-color: var(--gold); background: rgba(201,168,76,0.07);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(201,168,76,0); }
+      50% { box-shadow: 0 0 0 4px rgba(201,168,76,0.08); }
+    }
+    .pick-row.filled { border-color: rgba(201,168,76,0.15); }
+    .pick-num { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--text-light); min-width: 26px; }
+    .pick-owner { font-weight: 500; min-width: 110px; color: #d8d0c0; }
+    .pick-player { flex: 1; }
+    .pick-player.empty { color: var(--text-light); font-style: italic; }
+    .pick-round { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-light); }
+
+    /* Toggle buttons for mockup */
+    .mockup-controls {
+      position: fixed; bottom: 20px; right: 20px; z-index: 200;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .mockup-controls button {
+      background: var(--gold); color: var(--green-deep); border: none;
+      padding: 8px 16px; border-radius: var(--radius); cursor: pointer;
+      font-family: 'DM Mono', monospace; font-size: 0.72rem; text-transform: uppercase;
+    }
+    .mockup-controls button:hover { background: var(--gold-light); }
+
+    .option-label {
+      font-family: 'DM Mono', monospace; font-size: 0.6rem; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--text-light); margin-bottom: 6px; margin-top: 20px;
+    }
+
+    /* ── OPTION B: Sticky mini-bar ── */
+    .last-pick-sticky {
+      position: sticky;
+      top: 53px;
+      z-index: 50;
+      background: rgba(26,46,26,0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(201,168,76,0.2);
+      padding: 8px 32px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+      animation: slideDown 0.3s ease-out;
+    }
+    .last-pick-sticky .last-pick-label {
+      font-size: 0.58rem;
+    }
+    .last-pick-sticky .last-pick-detail {
+      font-size: 0.8rem;
+    }
+    .last-pick-sticky .last-pick-round {
+      font-size: 0.6rem;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-100%); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">The Masters</div>
+    <div class="header-right">
+      <span class="badge dim">Steve</span>
+      <span class="badge dim">↻ 2:34 PM</span>
+    </div>
+  </header>
+
+  <!-- OPTION B: Sticky bar below header -->
+  <div class="last-pick-sticky" id="optionB">
+    <span class="last-pick-label">Last Pick</span>
+    <span class="last-pick-detail"><strong>Dave</strong> selected <strong>Bryson DeChambeau</strong></span>
+    <span class="last-pick-round">Rd 2 · Pick #8</span>
+  </div>
+
+  <main>
+    <div class="tabs">
+      <button class="tab active">Draft Board</button>
+      <button class="tab">Scoreboard</button>
+    </div>
+
+    <!-- Search panel (current drafter's turn) -->
+    <div class="panel">
+      <h3>Picking for Charlie — Pick 9 of 12</h3>
+      <input placeholder="Search player..." />
+    </div>
+
+    <!-- OPTION A: Inline banner -->
+    <div id="optionA">
+      <div class="option-label">Option A — Inline banner</div>
+      <div class="last-pick-banner">
+        <span class="last-pick-label">Last Pick</span>
+        <span class="last-pick-detail"><strong>Dave</strong> selected <strong>Bryson DeChambeau</strong></span>
+        <span class="last-pick-round">Rd 2 · Pick #8</span>
+      </div>
+    </div>
+
+    <div class="section-title">Draft Board</div>
+    <div class="pick-list">
+      <!-- Round 1: top to bottom -->
+      <div class="pick-row filled"><span class="pick-num">#1</span><span class="pick-owner">Alice</span><span class="pick-player">Scottie Scheffler</span><span class="pick-round">R1</span></div>
+      <div class="pick-row filled"><span class="pick-num">#2</span><span class="pick-owner">Bob</span><span class="pick-player">Rory McIlroy</span><span class="pick-round">R1</span></div>
+      <div class="pick-row filled"><span class="pick-num">#3</span><span class="pick-owner">Charlie</span><span class="pick-player">Jon Rahm</span><span class="pick-round">R1</span></div>
+      <div class="pick-row filled"><span class="pick-num">#4</span><span class="pick-owner">Dave</span><span class="pick-player">Xander Schauffele</span><span class="pick-round">R1</span></div>
+      <!-- Round 2: bottom to top (snake) -->
+      <div class="pick-row filled"><span class="pick-num">#5</span><span class="pick-owner">Dave</span><span class="pick-player">Bryson DeChambeau</span><span class="pick-round">R2</span></div>
+      <div class="pick-row filled"><span class="pick-num">#6</span><span class="pick-owner">Charlie</span><span class="pick-player">Ludvig Åberg</span><span class="pick-round">R2</span></div>
+      <div class="pick-row filled"><span class="pick-num">#7</span><span class="pick-owner">Bob</span><span class="pick-player">Collin Morikawa</span><span class="pick-round">R2</span></div>
+      <div class="pick-row filled"><span class="pick-num">#8</span><span class="pick-owner">Alice</span><span class="pick-player">Viktor Hovland</span><span class="pick-round">R2</span></div>
+      <!-- Round 3: top to bottom again -->
+      <div class="pick-row current"><span class="pick-num">#9</span><span class="pick-owner">Alice</span><span class="pick-player empty">Waiting...</span><span class="pick-round">R3</span></div>
+      <div class="pick-row"><span class="pick-num">#10</span><span class="pick-owner">Bob</span><span class="pick-player empty">Waiting...</span><span class="pick-round">R3</span></div>
+      <div class="pick-row"><span class="pick-num">#11</span><span class="pick-owner">Charlie</span><span class="pick-player empty">Waiting...</span><span class="pick-round">R3</span></div>
+      <div class="pick-row"><span class="pick-num">#12</span><span class="pick-owner">Dave</span><span class="pick-player empty">Waiting...</span><span class="pick-round">R3</span></div>
+    </div>
+  </main>
+
+  <div class="mockup-controls">
+    <button onclick="toggle('optionA')">Toggle Option A (inline)</button>
+    <button onclick="toggle('optionB')">Toggle Option B (sticky)</button>
+  </div>
+
+  <script>
+    function toggle(id) {
+      document.getElementById(id).classList.toggle('hidden');
+    }
+  </script>
+</body>
+</html>
