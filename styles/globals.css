@@ -366,6 +366,101 @@ input::placeholder { color: var(--text-light); }
   margin-top: 16px;
 }
 
+/* CHAMPION BANNER */
+.champion-banner {
+  text-align: center;
+  padding: 32px 24px;
+  margin-bottom: 24px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.12) 0%, transparent 70%),
+    rgba(201,168,76,0.04);
+  border: 1px solid rgba(201,168,76,0.35);
+  border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp 0.6s ease-out;
+}
+.champion-banner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.champion-trophy {
+  font-size: 2.4rem;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+.champion-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+.champion-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  margin-bottom: 4px;
+}
+.champion-score {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #5cb85c;
+  margin-bottom: 20px;
+}
+.champion-divider {
+  width: 60px;
+  height: 1px;
+  background: rgba(201,168,76,0.3);
+  margin: 0 auto 20px;
+}
+.venmo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.venmo-pay-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-light);
+}
+.venmo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0,141,237,0.1);
+  border: 1px solid rgba(0,141,237,0.3);
+  color: #3d95ce;
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.78rem;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.venmo-link:hover { background: rgba(0,141,237,0.18); }
+.venmo-link-icon { font-weight: 700; font-size: 0.9rem; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .champion-name { font-size: 1.6rem; }
+  .champion-score { font-size: 1.4rem; }
+  .champion-banner { padding: 24px 16px; }
+}
+
 /* MISC */
 .loading {
   display: flex;

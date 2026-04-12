@@ -150,7 +150,12 @@ export default function Home() {
 
   // clear stale identity if name not in drafters list (unless commissioner)
   useEffect(() => {
-    if (s && myName && !s.drafters.includes(myName) && s.commissionerName !== myName) {
+    if (
+      s &&
+      myName &&
+      !s.drafters.includes(myName) &&
+      s.commissionerName !== myName
+    ) {
       clearMyName();
       setMyNameState("");
     }
@@ -184,7 +189,8 @@ export default function Home() {
   }, [s?.draftComplete]);
 
   // derived identity
-  const isCreator = myName && (s?.creator === myName || s?.commissionerName === myName);
+  const isCreator =
+    myName && (s?.creator === myName || s?.commissionerName === myName);
   const isJoined = myName && s?.drafters?.includes(myName);
   const currentDrafterIdx =
     s?.draftOrder?.length > 0 ? s.draftOrder[s.currentPickIndex] : null;
@@ -372,20 +378,21 @@ export default function Home() {
         });
         // Parse MongoDB $numberInt format: {"$numberInt":"1"} → 1
         const parseNum = (v) => {
-          if (typeof v === 'number') return v;
-          if (v && typeof v === 'object' && v.$numberInt) return parseInt(v.$numberInt) || null;
+          if (typeof v === "number") return v;
+          if (v && typeof v === "object" && v.$numberInt)
+            return parseInt(v.$numberInt) || null;
           return parseInt(v) || null;
         };
         const hole = parseNum(p.currentHole);
         const curRound = parseNum(p.currentRound);
         // Determine thru status
         let thru;
-        if (p.status === 'complete') thru = 'F';
-        else if (p.roundComplete) thru = 'F';
-        else if (p.thru && p.thru !== '') thru = p.thru;
-        else if (p.status === 'not started') thru = p.teeTime || 'Not started';
+        if (p.status === "complete") thru = "F";
+        else if (p.roundComplete) thru = "F";
+        else if (p.thru && p.thru !== "") thru = p.thru;
+        else if (p.status === "not started") thru = p.teeTime || "Not started";
         else if (hole && hole > 1) thru = `${hole}`;
-        else thru = '–';
+        else thru = "–";
         scores[p.playerId] = {
           total,
           rounds,
@@ -420,6 +427,17 @@ export default function Home() {
     .slice(0, 20);
 
   const teams = s?.draftComplete ? buildTeams(s) : [];
+
+  const tournamentComplete =
+    s?.draftComplete &&
+    teams.length > 0 &&
+    (s?.picks || []).length > 0 &&
+    (s?.picks || []).every((p) => {
+      const sc = s.scores?.[p.playerId];
+      return (
+        sc && (sc.thru === "F" || sc.status === "cut" || sc.status === "wd")
+      );
+    });
 
   // ── render ──
   const handleLogin = async () => {
@@ -529,40 +547,43 @@ export default function Home() {
 
       <main>
         {/* ── IDENTIFY: prompt for name when not recognized ── */}
-        {!myName && !isCreator && s.configured && (s.draftOrder?.length > 0 || s.draftComplete) && (
-          <div className="panel">
-            <h2>Who are you?</h2>
-            <div className="field">
-              <label>Enter your name to continue</label>
-              <div className="row-gap">
-                <input
-                  value={joinName}
-                  onChange={(e) => setJoinName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && joinName.trim()) {
-                      saveMyName(joinName.trim());
-                      setMyNameState(joinName.trim());
-                      setJoinName("");
-                    }
-                  }}
-                  placeholder="Your name..."
-                />
-                <button
-                  className="btn"
-                  onClick={() => {
-                    if (joinName.trim()) {
-                      saveMyName(joinName.trim());
-                      setMyNameState(joinName.trim());
-                      setJoinName("");
-                    }
-                  }}
-                >
-                  Go
-                </button>
+        {!myName &&
+          !isCreator &&
+          s.configured &&
+          (s.draftOrder?.length > 0 || s.draftComplete) && (
+            <div className="panel">
+              <h2>Who are you?</h2>
+              <div className="field">
+                <label>Enter your name to continue</label>
+                <div className="row-gap">
+                  <input
+                    value={joinName}
+                    onChange={(e) => setJoinName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && joinName.trim()) {
+                        saveMyName(joinName.trim());
+                        setMyNameState(joinName.trim());
+                        setJoinName("");
+                      }
+                    }}
+                    placeholder="Your name..."
+                  />
+                  <button
+                    className="btn"
+                    onClick={() => {
+                      if (joinName.trim()) {
+                        saveMyName(joinName.trim());
+                        setMyNameState(joinName.trim());
+                        setJoinName("");
+                      }
+                    }}
+                  >
+                    Go
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* ── SETUP: Tournament Picker ── */}
         {!s.configured && (
@@ -841,59 +862,85 @@ export default function Home() {
                     No scores yet — hit Refresh.
                   </div>
                 ) : (
-                  <div className="scoreboard">
-                    {teams.map((team, rank) => (
-                      <div
-                        key={team.name}
-                        className={`team-card ${rank === 0 ? "leader" : ""}`}
-                      >
-                        <div className="team-header">
-                          <span
-                            className={`team-rank ${rank === 0 ? "gold" : ""}`}
-                          >
-                            {team.displayPos}
-                          </span>
-                          <span className="team-name">{team.name}</span>
-                          <span
-                            className={`team-total ${scoreClass(team.teamTotal)}`}
-                          >
-                            {fmtScore(team.teamTotal)}
-                          </span>
+                  <>
+                    {tournamentComplete && teams[0] && (
+                      <div className="champion-banner">
+                        <div className="champion-trophy">🏆</div>
+                        <div className="champion-label">Champion</div>
+                        <div className="champion-name">{teams[0].name}</div>
+                        <div className="champion-score">
+                          {fmtScore(teams[0].teamTotal)}
                         </div>
-                        <div className="team-golfers">
-                          {team.golfers.map((g) => (
-                            <div key={g.playerId} className="golfer-row">
-                              <span
-                                className={`golfer-name ${g.counting ? "counting" : "nc"}`}
-                              >
-                                {g.name}
-                                {g.counting && <span className="star">★</span>}
-                                {!g.counting && <span className="ex">✕</span>}
-                              </span>
-                              <span
-                                className={`golfer-status ${g.cut ? "cut" : ""}`}
-                              >
-                                {g.cut
-                                  ? g.status.toUpperCase()
-                                  : g.thru === "F"
-                                    ? "Done"
-                                    : g.thru === "–"
-                                      ? ""
-                                      : /^\d+$/.test(g.thru)
-                                        ? `Thru ${g.thru}`
-                                        : g.thru}
-                              </span>
-                              <span
-                                className={`golfer-score ${g.cut ? "" : scoreClass(g.total)}`}
-                              >
-                                {g.cut ? "–" : fmtScore(g.total)}
-                              </span>
-                            </div>
-                          ))}
+                        <div className="champion-divider" />
+                        <div className="venmo-section">
+                          {" "}
+                          <a
+                            className="venmo-link"
+                            href="https://venmo.com/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Pay on Venmo
+                          </a>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    )}
+                    <div className="scoreboard">
+                      {teams.map((team, rank) => (
+                        <div
+                          key={team.name}
+                          className={`team-card ${rank === 0 ? "leader" : ""}`}
+                        >
+                          <div className="team-header">
+                            <span
+                              className={`team-rank ${rank === 0 ? "gold" : ""}`}
+                            >
+                              {team.displayPos}
+                            </span>
+                            <span className="team-name">{team.name}</span>
+                            <span
+                              className={`team-total ${scoreClass(team.teamTotal)}`}
+                            >
+                              {fmtScore(team.teamTotal)}
+                            </span>
+                          </div>
+                          <div className="team-golfers">
+                            {team.golfers.map((g) => (
+                              <div key={g.playerId} className="golfer-row">
+                                <span
+                                  className={`golfer-name ${g.counting ? "counting" : "nc"}`}
+                                >
+                                  {g.name}
+                                  {g.counting && (
+                                    <span className="star">★</span>
+                                  )}
+                                  {!g.counting && <span className="ex">✕</span>}
+                                </span>
+                                <span
+                                  className={`golfer-status ${g.cut ? "cut" : ""}`}
+                                >
+                                  {g.cut
+                                    ? g.status.toUpperCase()
+                                    : g.thru === "F"
+                                      ? "Done"
+                                      : g.thru === "–"
+                                        ? ""
+                                        : /^\d+$/.test(g.thru)
+                                          ? `Thru ${g.thru}`
+                                          : g.thru}
+                                </span>
+                                <span
+                                  className={`golfer-score ${g.cut ? "" : scoreClass(g.total)}`}
+                                >
+                                  {g.cut ? "–" : fmtScore(g.total)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
                 {s.lastRefreshed && (
                   <div className="last-refreshed">
@@ -915,7 +962,11 @@ export default function Home() {
                           onKeyDown={(e) => e.key === "Enter" && addDrafter()}
                           placeholder="Drafter name..."
                         />
-                        <button className="btn" onClick={addDrafter} disabled={busy}>
+                        <button
+                          className="btn"
+                          onClick={addDrafter}
+                          disabled={busy}
+                        >
                           Add
                         </button>
                       </div>
@@ -948,7 +999,9 @@ export default function Home() {
                           <div className="results" style={{ maxHeight: 200 }}>
                             {(s.field || [])
                               .filter((p) =>
-                                p.name.toLowerCase().includes(assignSearch.toLowerCase()),
+                                p.name
+                                  .toLowerCase()
+                                  .includes(assignSearch.toLowerCase()),
                               )
                               .slice(0, 15)
                               .map((p) => {
@@ -966,7 +1019,9 @@ export default function Home() {
                                   >
                                     <span>{p.name}</span>
                                     <span className="muted">
-                                      {p.worldRank < 999 ? `WR #${p.worldRank}` : ""}
+                                      {p.worldRank < 999
+                                        ? `WR #${p.worldRank}`
+                                        : ""}
                                       {taken ? " · drafted" : ""}
                                     </span>
                                   </div>
@@ -1002,7 +1057,10 @@ function buildTeams(s) {
           playerId: p.playerId,
           total: sc ? sc.total : null,
           status: sc?.status || "unknown",
-          thru: typeof sc?.thru === 'string' || typeof sc?.thru === 'number' ? sc.thru : "–",
+          thru:
+            typeof sc?.thru === "string" || typeof sc?.thru === "number"
+              ? sc.thru
+              : "–",
           pos: sc?.pos || "–",
           cut,
           counting: false,
@@ -1034,15 +1092,22 @@ function buildTeams(s) {
 
   // Assign positions with ties (e.g. T1, T2)
   for (let i = 0; i < sorted.length; i++) {
-    if (sorted[i].teamTotal === null) { sorted[i].position = '–'; continue; }
-    const pos = i > 0 && sorted[i].teamTotal === sorted[i - 1].teamTotal
-      ? sorted[i - 1].position
-      : i + 1;
+    if (sorted[i].teamTotal === null) {
+      sorted[i].position = "–";
+      continue;
+    }
+    const pos =
+      i > 0 && sorted[i].teamTotal === sorted[i - 1].teamTotal
+        ? sorted[i - 1].position
+        : i + 1;
     sorted[i].position = pos;
   }
   for (const t of sorted) {
-    const tied = sorted.filter(o => o.position === t.position && o.teamTotal !== null).length > 1;
-    t.displayPos = t.teamTotal === null ? '–' : tied ? `T${t.position}` : `${t.position}`;
+    const tied =
+      sorted.filter((o) => o.position === t.position && o.teamTotal !== null)
+        .length > 1;
+    t.displayPos =
+      t.teamTotal === null ? "–" : tied ? `T${t.position}` : `${t.position}`;
   }
 
   return sorted;
