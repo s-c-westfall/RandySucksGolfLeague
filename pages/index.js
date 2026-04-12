@@ -371,7 +371,11 @@ export default function Home() {
           return sc;
         });
         const hole = typeof p.currentHole === 'number' ? p.currentHole : (parseInt(p.currentHole) || null);
-        const thru = p.roundComplete ? "F" : hole ? `${hole}` : "–";
+        let thru;
+        if (p.status === 'complete') thru = 'F';
+        else if (p.roundComplete) thru = 'F';
+        else if (hole) thru = `${hole}`;
+        else thru = '–';
         scores[p.playerId] = {
           total,
           rounds,
