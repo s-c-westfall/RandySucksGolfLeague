@@ -404,6 +404,9 @@ export default function Home() {
   const [tournDropdownOpen, setTournDropdownOpen] = useState(false);
   const tournSelectorRef = useRef(null);
 
+  // Winner Venmo handle (fetched when tournament completes)
+  const [winnerVenmo, setWinnerVenmo] = useState(null);
+
   // Derived from session
   const myName = session?.user?.name || "";
   const isCommissioner = session?.user?.isCommissioner || false;
@@ -716,6 +719,26 @@ export default function Home() {
       .then(setHistoryData)
       .catch(() => {});
   }, [viewingTournament]);
+
+  // Fetch winner's Venmo handle when tournament completes.
+  // We derive completion and winner from `s` directly to avoid referencing
+  // constants that are declared after the early-return guards.
+  useEffect(() => {
+    if (!s?.draftComplete || !s?.picks?.length) return;
+    const allDone = s.picks.every((p) => {
+      const sc = s.scores?.[p.playerId];
+      return sc && (sc.thru === 'F' || sc.status === 'cut' || sc.status === 'wd');
+    });
+    if (!allDone) return;
+    // Build teams to find the leader
+    const teamsForEffect = buildTeams(s, s.previousRankings);
+    if (!teamsForEffect.length) return;
+    const winnerName = teamsForEffect[0].name;
+    fetch(`/api/profile?name=${encodeURIComponent(winnerName)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setWinnerVenmo(d?.venmoHandle || null))
+      .catch(() => {});
+  }, [s?.draftComplete, s?.scores, s?.picks]);
 
   // ── Render: loading spinner while session loads ──
   if (status === "loading") {
@@ -1285,18 +1308,22 @@ export default function Home() {
                         <div className="champion-score">
                           {fmtScore(teams[0].teamTotal)}
                         </div>
-                        <div className="champion-divider" />
-                        <div className="venmo-section">
-                          {" "}
-                          <a
-                            className="venmo-link"
-                            href="https://venmo.com/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            Pay on Venmo
-                          </a>
-                        </div>
+                        {winnerVenmo && (
+                          <>
+                            <div className="champion-divider" />
+                            <div className="venmo-section">
+                              <a
+                                className="venmo-link"
+                                href={`https://account.venmo.com/pay?recipients=${encodeURIComponent(winnerVenmo)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <span className="venmo-link-icon">V</span>
+                                Pay {teams[0].name} on Venmo
+                              </a>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                     <div className="scoreboard">
