@@ -31,9 +31,9 @@ Per-user accounts with email/password, persistent sessions, server-side identity
 
 ---
 
-## Wave 3 — Tournament history
+## Wave 3 — Tournament history ✅ COMPLETE
 
-### Tournament history
+### Tournament history ✅
 Archive tournaments on reset to a normalized schema. Browse past results via a dropdown in the header that replaces the tournament name. *(Backlog #6)*
 
 ---
@@ -63,6 +63,6 @@ See [BACKLOG.md — Development Instructions](BACKLOG.md#development-instruction
 |------|-------|-------|
 | ~~1~~ | ~~#2, #3, #4, #5, #11, #12~~ | ✅ Complete |
 | ~~2~~ | ~~#1 (+#10)~~ | ✅ Complete |
-| 3 | #6 | Tournament history + DB schema |
+| ~~3~~ | ~~#6~~ | ✅ Complete |
 | 4 | #7, #8 | Challenges + champion Venmo link, parallel |
 | 5 | #9 | Pull to refresh (polish) |

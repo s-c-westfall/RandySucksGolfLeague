@@ -623,7 +623,7 @@ Add styles for: `.move-pip`, `.rank-group`, `.move-indicator`, and their `.up`/`
 
 ---
 
-## 6. Tournament History
+## 6. Tournament History ✅ COMPLETED
 
 ### Problem
 When the commissioner hits Reset (`DELETE /api/state`), the entire `league_state` row is deleted — all picks, scores, and standings are gone permanently. There's no archive, no record of past tournaments, and no way to look back at who won, who picked whom, or what the final standings were.
