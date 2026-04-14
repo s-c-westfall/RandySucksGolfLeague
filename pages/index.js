@@ -762,7 +762,10 @@ export default function Home() {
   const reset = () =>
     wrap(async () => {
       if (!confirm("Reset all league data? This cannot be undone.")) return;
-      await stateDelete();
+      const result = await stateDelete();
+      if (result?.archiveError) {
+        alert(`Warning: tournament data could not be archived before reset.\n\nError: ${result.archiveError}\n\nThe league has been reset but standings were not saved to history.`);
+      }
       setSchedule(null);
       setS(await stateGet());
       setTab("draft");

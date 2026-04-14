@@ -85,6 +85,7 @@ export default async function handler(req, res) {
 
       // Archive current state before deleting, if the draft is complete
       let archived = false;
+      let archiveError = null;
       const currentState = await getState();
 
       if (currentState.draftComplete && currentState.picks?.length > 0) {
@@ -93,14 +94,20 @@ export default async function handler(req, res) {
           const winner = teams[0];
           const winnerName = winner?.name || null;
 
-          // Look up winner_user_id by name (nullable — don't fail if not found)
-          let winnerUserId = null;
-          if (winnerName) {
-            const userRows = await sql`SELECT id FROM users WHERE name = ${winnerName} LIMIT 1`;
-            winnerUserId = userRows[0]?.id || null;
-          }
+          // Batch-load all user IDs by name in one query
+          const allNames = [...new Set([
+            ...currentState.drafters,
+            ...(winnerName ? [winnerName] : []),
+          ])];
+          const userRows = allNames.length > 0
+            ? await sql`SELECT id, name FROM users WHERE name = ANY(${allNames})`
+            : [];
+          const nameToUserId = Object.fromEntries(userRows.map(r => [r.name, r.id]));
 
-          // Insert into tournaments
+          const winnerUserId = winnerName ? (nameToUserId[winnerName] || null) : null;
+
+          // Insert tournament row first, then picks + standings.
+          // If picks/standings fail we delete the tournament row to avoid orphans.
           const tournRows = await sql`
             INSERT INTO tournaments (tourn_id, name, year, completed_at, winner_name, winner_user_id)
             VALUES (
@@ -115,49 +122,57 @@ export default async function handler(req, res) {
           `;
           const tournamentId = tournRows[0].id;
 
-          // Insert picks
-          const numDrafters = currentState.drafters.length;
-          for (const pick of currentState.picks) {
-            const drafterName = currentState.drafters[pick.drafterIndex] || '';
-            const round = numDrafters > 0
-              ? Math.floor(pick.pickIndex / numDrafters) + 1
-              : 1;
-            // Look up user_id by drafter name (nullable)
-            const pickUserRows = await sql`SELECT id FROM users WHERE name = ${drafterName} LIMIT 1`;
-            const pickUserId = pickUserRows[0]?.id || null;
-            await sql`
-              INSERT INTO tournament_picks (tournament_id, user_id, drafter_name, player_id, player_name, pick_index, round)
-              VALUES (${tournamentId}, ${pickUserId}, ${drafterName}, ${pick.playerId}, ${pick.name}, ${pick.pickIndex}, ${round})
-            `;
-          }
+          try {
+            // Insert all picks
+            const numDrafters = currentState.drafters.length;
+            for (const pick of currentState.picks) {
+              const drafterName = currentState.drafters[pick.drafterIndex] || '';
+              const round = numDrafters > 0
+                ? Math.floor(pick.pickIndex / numDrafters) + 1
+                : 1;
+              const pickUserId = nameToUserId[drafterName] || null;
+              await sql`
+                INSERT INTO tournament_picks
+                  (tournament_id, user_id, drafter_name, player_id, player_name, pick_index, round)
+                VALUES
+                  (${tournamentId}, ${pickUserId}, ${drafterName}, ${pick.playerId}, ${pick.name}, ${pick.pickIndex}, ${round})
+              `;
+            }
 
-          // Insert standings
-          for (const team of teams) {
-            const standUserRows = await sql`SELECT id FROM users WHERE name = ${team.name} LIMIT 1`;
-            const standUserId = standUserRows[0]?.id || null;
-            const positionNum = typeof team.position === 'number' ? team.position : null;
-            await sql`
-              INSERT INTO tournament_standings (tournament_id, user_id, drafter_name, position, display_position, team_total, golfer_scores)
-              VALUES (
-                ${tournamentId},
-                ${standUserId},
-                ${team.name},
-                ${positionNum},
-                ${team.displayPos || null},
-                ${team.teamTotal},
-                ${JSON.stringify(team.golfers)}::jsonb
-              )
-            `;
+            // Insert all standings
+            for (const team of teams) {
+              const standUserId = nameToUserId[team.name] || null;
+              const positionNum = typeof team.position === 'number' ? team.position : null;
+              await sql`
+                INSERT INTO tournament_standings
+                  (tournament_id, user_id, drafter_name, position, display_position, team_total, golfer_scores)
+                VALUES (
+                  ${tournamentId},
+                  ${standUserId},
+                  ${team.name},
+                  ${positionNum},
+                  ${team.displayPos || null},
+                  ${team.teamTotal},
+                  ${JSON.stringify(team.golfers)}::jsonb
+                )
+              `;
+            }
+          } catch (innerErr) {
+            // Roll back by deleting the tournament row (cascades to picks + standings)
+            await sql`DELETE FROM tournaments WHERE id = ${tournamentId}`;
+            throw innerErr;
           }
 
           archived = true;
-        } catch (archiveErr) {
-          console.error('Archive failed (proceeding with reset):', archiveErr);
+        } catch (err) {
+          // Non-fatal: log and proceed with reset — don't block the commissioner
+          archiveError = err.message;
+          console.error('Archive failed (proceeding with reset):', err);
         }
       }
 
       await sql`DELETE FROM league_state WHERE id = 1`;
-      return res.status(200).json({ ok: true, archived });
+      return res.status(200).json({ ok: true, archived, archiveError: archiveError || undefined });
     }
 
     // POST mutations
