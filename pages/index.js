@@ -522,7 +522,7 @@ export default function Home() {
         <div className="header-right">
           {myName && <span className="badge dim">{myName}</span>}
           {s.lastRefreshed && (
-            <span className="badge dim">
+            <span className="badge dim timestamp">
               ↻{" "}
               {new Date(s.lastRefreshed).toLocaleTimeString([], {
                 hour: "2-digit",
@@ -536,7 +536,7 @@ export default function Home() {
               onClick={refreshScores}
               disabled={busy}
             >
-              ↻ Refresh
+              ↻<span className="refresh-label"> Refresh</span>
             </button>
           )}
           <button className="btn-ghost danger" onClick={reset}>
