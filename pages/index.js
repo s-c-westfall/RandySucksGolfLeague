@@ -434,6 +434,13 @@ export default function Home() {
   }, [highlightIndex]);
 
   // ── derived ──
+  const lastPickIndex = (s?.currentPickIndex ?? 0) - 1;
+  const lastPick = lastPickIndex >= 0 ? (s?.picks?.[lastPickIndex] ?? null) : null;
+  const lastPickDrafter = lastPick ? s.drafters[lastPick.drafterIndex] : null;
+  const lastPickRound = lastPick && s.drafters.length > 0
+    ? Math.floor(lastPickIndex / s.drafters.length) + 1
+    : null;
+
   const drafted = new Set((s?.picks || []).map((p) => p.playerId));
   const filteredField = (s?.field || [])
     .filter((p) => p.name.toLowerCase().includes(searchQ.toLowerCase()))
@@ -852,6 +859,16 @@ export default function Home() {
                     <div className="empty-state">
                       Waiting for {currentDrafterName} to pick...
                     </div>
+                  </div>
+                )}
+
+                {lastPick && (
+                  <div className="last-pick-banner">
+                    <span className="last-pick-label">Last Pick</span>
+                    <span className="last-pick-body">
+                      <strong>{lastPickDrafter}</strong> selected <strong>{lastPick.name}</strong>
+                    </span>
+                    <span className="last-pick-meta">Rd {lastPickRound} · Pick #{lastPickIndex + 1}</span>
                   </div>
                 )}
 

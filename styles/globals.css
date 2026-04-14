@@ -490,6 +490,46 @@ input::placeholder { color: var(--text-light); }
   .champion-banner { padding: 24px 16px; }
 }
 
+/* LAST PICK BANNER */
+.last-pick-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(201,168,76,0.06);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  animation: lastPickFadeIn 0.4s ease-out;
+}
+.last-pick-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+.last-pick-body {
+  flex: 1;
+  font-size: 0.87rem;
+}
+.last-pick-body strong {
+  color: var(--gold-light);
+}
+.last-pick-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--text-light);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+@keyframes lastPickFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* MISC */
 .loading {
   display: flex;
