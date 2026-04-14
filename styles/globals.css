@@ -299,6 +299,62 @@ input::placeholder { color: var(--text-light); }
 .pick-player.empty { color: var(--text-light); font-style: italic; }
 .pick-round { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-light); }
 
+/* DRAFT TABLE */
+.draft-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 16px;
+}
+.draft-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  min-width: 360px;
+}
+.draft-table th {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-light);
+  padding: 6px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  white-space: nowrap;
+}
+.draft-table td {
+  padding: 7px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: middle;
+}
+.dt-participant-cell {
+  font-weight: 500;
+  color: var(--cream);
+  white-space: nowrap;
+}
+.dt-pick-cell {
+  color: var(--cream-dark);
+  min-width: 120px;
+}
+.dt-pick-cell.dt-active {
+  background: rgba(201,168,76,0.1);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: var(--radius);
+}
+.dt-pick-cell.dt-empty {
+  color: transparent;
+}
+.dt-picking {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.draft-table tr:hover td {
+  background: rgba(255,255,255,0.02);
+}
+
 /* SCOREBOARD */
 .scoreboard { display: flex; flex-direction: column; gap: 6px; }
 .team-card {

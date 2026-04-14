@@ -15,6 +15,31 @@ function buildSnakeOrder(n, rounds) {
   return order;
 }
 
+function buildDraftGrid(drafters, draftOrder, picks) {
+  // grid[drafterIndex][round] = pick object or null
+  const rounds = Math.ceil(draftOrder.length / drafters.length);
+  const grid = drafters.map(() => Array(rounds).fill(null));
+  const roundCount = drafters.map(() => 0);
+
+  draftOrder.forEach((drafterIdx, i) => {
+    const round = roundCount[drafterIdx]++;
+    if (picks[i]) grid[drafterIdx][round] = picks[i];
+  });
+
+  // Current pick position: which drafter + which round cell is active
+  const currentSlot = picks.filter(Boolean).length; // next unfilled slot index
+
+  // Recompute current round properly
+  const currentRoundCount = drafters.map(() => 0);
+  for (let i = 0; i < currentSlot; i++) {
+    currentRoundCount[draftOrder[i]]++;
+  }
+  const activeDrafterIdx = draftOrder[currentSlot] ?? -1;
+  const activeRound = activeDrafterIdx >= 0 ? currentRoundCount[activeDrafterIdx] : -1;
+
+  return { grid, rounds, activeDrafterIdx, activeRound };
+}
+
 function fmtScore(n) {
   if (n === null || n === undefined) return "–";
   if (n === 0) return "E";
@@ -910,28 +935,44 @@ export default function Home() {
                 )}
 
                 <div className="section-title">Draft Board</div>
-                <div className="pick-list">
-                  {(s.draftOrder || []).map((drafterIdx, i) => {
-                    const pick = s.picks[i];
-                    const isCurrent = inDraft && i === s.currentPickIndex;
-                    const roundNum = Math.floor(i / s.drafters.length) + 1;
-                    return (
-                      <div
-                        key={i}
-                        className={`pick-row ${isCurrent ? "current" : ""} ${pick ? "filled" : ""}`}
-                      >
-                        <span className="pick-num">#{i + 1}</span>
-                        <span className="pick-owner">
-                          {s.drafters[drafterIdx]}
-                        </span>
-                        <span className={`pick-player ${!pick ? "empty" : ""}`}>
-                          {pick ? pick.name : "Waiting..."}
-                        </span>
-                        <span className="pick-round">R{roundNum}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                {s.drafters?.length > 0 && s.draftOrder?.length > 0 && (() => {
+                  const { grid, rounds, activeDrafterIdx, activeRound } = buildDraftGrid(
+                    s.drafters, s.draftOrder, s.picks || []
+                  );
+                  return (
+                    <div className="draft-table-wrap">
+                      <table className="draft-table">
+                        <thead>
+                          <tr>
+                            <th className="dt-participant">Participant</th>
+                            {Array.from({ length: rounds }, (_, r) => (
+                              <th key={r} className="dt-round">Rd {r + 1}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {s.drafters.map((drafter, di) => (
+                            <tr key={drafter}>
+                              <td className="dt-participant-cell">{drafter}</td>
+                              {Array.from({ length: rounds }, (_, r) => {
+                                const pick = grid[di][r];
+                                const isActive = inDraft && di === activeDrafterIdx && r === activeRound;
+                                return (
+                                  <td
+                                    key={r}
+                                    className={`dt-pick-cell ${isActive ? "dt-active" : ""} ${pick ? "dt-filled" : "dt-empty"}`}
+                                  >
+                                    {pick ? pick.name : isActive ? <span className="dt-picking">picking…</span> : null}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
 
                 {err && <div className="error" role="alert">{err}</div>}
               </div>
