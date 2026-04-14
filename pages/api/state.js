@@ -78,15 +78,17 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
-      if (!session.user.isCommissioner) {
-        return res.status(403).json({ error: 'Only the commissioner can reset the league.' });
-      }
       await ensureTable();
+      const resetState = await getState();
+      const canReset = session.user.isCommissioner || session.user.name === resetState.creator;
+      if (!canReset) {
+        return res.status(403).json({ error: 'Only the commissioner or league creator can reset.' });
+      }
 
       // Archive current state before deleting, if the draft is complete
       let archived = false;
       let archiveError = null;
-      const currentState = await getState();
+      const currentState = resetState; // already loaded above for auth check
 
       if (currentState.draftComplete && currentState.picks?.length > 0) {
         try {

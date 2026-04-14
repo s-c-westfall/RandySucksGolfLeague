@@ -759,23 +759,33 @@ export default function Home() {
     }
   };
 
-  const reset = () =>
-    wrap(async () => {
-      if (!confirm("Reset all league data? This cannot be undone.")) return;
-      const result = await stateDelete();
+  const reset = async () => {
+    if (!confirm("Reset all league data? This cannot be undone.")) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/state", { method: "DELETE" });
+      if (res.status === 401) { alert("You must be logged in to reset the league."); return; }
+      if (res.status === 403) { alert("Only the commissioner can reset the league.\n\nIf you are the commissioner, try logging out and back in to refresh your session."); return; }
+      if (!res.ok) { alert(`Reset failed (${res.status}). Please try again.`); return; }
+      const result = await res.json();
       if (result?.archiveError) {
-        alert(`Warning: tournament data could not be archived before reset.\n\nError: ${result.archiveError}\n\nThe league has been reset but standings were not saved to history.`);
+        alert(`Warning: standings could not be saved to history before reset.\n\nError: ${result.archiveError}\n\nThe league has been reset but this tournament's data was not archived.`);
       }
       setSchedule(null);
+      setErr("");
       setS(await stateGet());
       setTab("draft");
       setChallenges([]);
-      // Refresh past tournaments list after archiving
       fetch("/api/history")
         .then((r) => r.json())
         .then((data) => Array.isArray(data) && setPastTournaments(data))
         .catch(() => {});
-    });
+    } catch (e) {
+      alert(`Reset error: ${e.message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const sendChallenge = async () => {
     if (!challengeOpponent || !challengeAmount) return;
