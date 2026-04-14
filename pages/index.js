@@ -36,7 +36,8 @@ function buildDraftGrid(drafters, draftOrder, picks) {
     currentRoundCount[draftOrder[i]]++;
   }
   const activeDrafterIdx = draftOrder[currentSlot] ?? -1;
-  const activeRound = activeDrafterIdx >= 0 ? currentRoundCount[activeDrafterIdx] : -1;
+  const activeRound =
+    activeDrafterIdx >= 0 ? currentRoundCount[activeDrafterIdx] : -1;
 
   return { grid, rounds, activeDrafterIdx, activeRound };
 }
@@ -179,7 +180,8 @@ function AuthScreen() {
     return score;
   };
   const strengthScore = getStrength(regPassword);
-  const strengthClass = strengthScore <= 1 ? "weak" : strengthScore <= 2 ? "medium" : "strong";
+  const strengthClass =
+    strengthScore <= 1 ? "weak" : strengthScore <= 2 ? "medium" : "strong";
 
   return (
     <>
@@ -193,7 +195,7 @@ function AuthScreen() {
       </Head>
 
       <header>
-        <div className="logo">Randy Sucks Golf League</div>
+        <div className="logo">Randy's A Hack</div>
       </header>
 
       <div className="auth-container">
@@ -202,13 +204,21 @@ function AuthScreen() {
           <div className="auth-tabs">
             <button
               className={`auth-tab ${authTab === "login" ? "active" : ""}`}
-              onClick={() => { setAuthTab("login"); setErr(""); setSuccessMsg(""); }}
+              onClick={() => {
+                setAuthTab("login");
+                setErr("");
+                setSuccessMsg("");
+              }}
             >
               Log In
             </button>
             <button
               className={`auth-tab ${authTab === "register" ? "active" : ""}`}
-              onClick={() => { setAuthTab("register"); setErr(""); setSuccessMsg(""); }}
+              onClick={() => {
+                setAuthTab("register");
+                setErr("");
+                setSuccessMsg("");
+              }}
             >
               Create Account
             </button>
@@ -216,12 +226,16 @@ function AuthScreen() {
 
           {/* Success message */}
           {successMsg && (
-            <div className="auth-success" role="status">{successMsg}</div>
+            <div className="auth-success" role="status">
+              {successMsg}
+            </div>
           )}
 
           {/* Error message */}
           {err && (
-            <div className="auth-error" role="alert">{err}</div>
+            <div className="auth-error" role="alert">
+              {err}
+            </div>
           )}
 
           {/* LOGIN FORM */}
@@ -256,7 +270,11 @@ function AuthScreen() {
                 />
               </div>
 
-              <button className="btn-auth-primary" type="submit" disabled={busy}>
+              <button
+                className="btn-auth-primary"
+                type="submit"
+                disabled={busy}
+              >
                 {busy ? "Signing in…" : "Sign In"}
               </button>
 
@@ -265,7 +283,10 @@ function AuthScreen() {
                 <button
                   type="button"
                   className="auth-link"
-                  onClick={() => { setAuthTab("register"); setErr(""); }}
+                  onClick={() => {
+                    setAuthTab("register");
+                    setErr("");
+                  }}
                 >
                   Create one
                 </button>
@@ -290,7 +311,9 @@ function AuthScreen() {
                   required
                   autoComplete="name"
                 />
-                <div className="form-hint">This is the name shown on the draft board and scoreboard</div>
+                <div className="form-hint">
+                  This is the name shown on the draft board and scoreboard
+                </div>
               </div>
 
               <div className="form-group">
@@ -341,10 +364,16 @@ function AuthScreen() {
                   onChange={(e) => setRegVenmo(e.target.value)}
                   autoComplete="off"
                 />
-                <div className="form-hint">Venmo handle (optional) — for collecting your winnings</div>
+                <div className="form-hint">
+                  Venmo handle (optional) — for collecting your winnings
+                </div>
               </div>
 
-              <button className="btn-auth-primary" type="submit" disabled={busy}>
+              <button
+                className="btn-auth-primary"
+                type="submit"
+                disabled={busy}
+              >
                 {busy ? "Creating account…" : "Create Account"}
               </button>
 
@@ -353,7 +382,10 @@ function AuthScreen() {
                 <button
                   type="button"
                   className="auth-link"
-                  onClick={() => { setAuthTab("login"); setErr(""); }}
+                  onClick={() => {
+                    setAuthTab("login");
+                    setErr("");
+                  }}
                 >
                   Sign in
                 </button>
@@ -420,9 +452,9 @@ export default function Home() {
   // Challenges
   const [showChallenges, setShowChallenges] = useState(false);
   const [challenges, setChallenges] = useState([]);
-  const [challengeOpponent, setChallengeOpponent] = useState('');
-  const [challengeAmount, setChallengeAmount] = useState('');
-  const [challengeErr, setChallengeErr] = useState('');
+  const [challengeOpponent, setChallengeOpponent] = useState("");
+  const [challengeAmount, setChallengeAmount] = useState("");
+  const [challengeErr, setChallengeErr] = useState("");
 
   // Derived from session
   const myName = session?.user?.name || "";
@@ -441,20 +473,31 @@ export default function Home() {
   };
 
   // Keep refs in sync for passive touch handler
-  useEffect(() => { isPullRefreshingRef.current = isPullRefreshing; }, [isPullRefreshing]);
-  useEffect(() => { busyRef.current = busy; }, [busy]);
+  useEffect(() => {
+    isPullRefreshingRef.current = isPullRefreshing;
+  }, [isPullRefreshing]);
+  useEffect(() => {
+    busyRef.current = busy;
+  }, [busy]);
 
   // Ref to track whether tournament is complete (avoids stale closure in polling effect)
   const tournamentCompleteRef = useRef(false);
 
   // Pull-to-refresh touch handlers
   const handleTouchStart = (e) => {
-    if (window.scrollY !== 0 || isPullRefreshingRef.current || busyRef.current) return;
+    if (window.scrollY !== 0 || isPullRefreshingRef.current || busyRef.current)
+      return;
     pullStartYRef.current = e.touches[0].clientY;
   };
 
   const handleTouchMovePassive = (e) => {
-    if (window.scrollY !== 0 || isPullRefreshingRef.current || busyRef.current || !pullStartYRef.current) return;
+    if (
+      window.scrollY !== 0 ||
+      isPullRefreshingRef.current ||
+      busyRef.current ||
+      !pullStartYRef.current
+    )
+      return;
     const delta = e.touches[0].clientY - pullStartYRef.current;
     if (delta > 0) {
       e.preventDefault();
@@ -487,15 +530,17 @@ export default function Home() {
     const el = mainRef.current;
     if (!el) return;
     const onMove = (e) => handleTouchMovePassive(e);
-    el.addEventListener('touchmove', onMove, { passive: false });
-    return () => el.removeEventListener('touchmove', onMove);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    el.addEventListener("touchmove", onMove, { passive: false });
+    return () => el.removeEventListener("touchmove", onMove);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPullRefreshing, busy, pullStartYRef]);
 
   const fetchChallenges = async (tournId) => {
     if (!tournId) return;
     try {
-      const res = await fetch(`/api/challenges?tournId=${encodeURIComponent(tournId)}`);
+      const res = await fetch(
+        `/api/challenges?tournId=${encodeURIComponent(tournId)}`,
+      );
       if (res.ok) {
         const data = await res.json();
         setChallenges(Array.isArray(data) ? data : []);
@@ -549,8 +594,7 @@ export default function Home() {
   }, [s?.draftComplete, s?.scores]);
 
   // derived identity
-  const isCreator =
-    myName && (s?.creator === myName || isCommissioner);
+  const isCreator = myName && (s?.creator === myName || isCommissioner);
   const isJoined = myName && s?.drafters?.includes(myName);
   const currentDrafterIdx =
     s?.draftOrder?.length > 0 ? s.draftOrder[s.currentPickIndex] : null;
@@ -581,8 +625,7 @@ export default function Home() {
 
   const loadTournament = () =>
     wrap(async () => {
-      if (!selectedTournId)
-        throw new Error("Select a tournament.");
+      if (!selectedTournId) throw new Error("Select a tournament.");
       const selectedTourn = schedule?.find(
         (t) => (t.tournId || t.id) === selectedTournId,
       );
@@ -751,8 +794,8 @@ export default function Home() {
       }
       const u = await statePost("updateScores", { scores });
       setS(u);
-      setLiveMsg('Scores updated');
-      setTimeout(() => setLiveMsg(''), 3000);
+      setLiveMsg("Scores updated");
+      setTimeout(() => setLiveMsg(""), 3000);
       if (u.tournId) fetchChallenges(u.tournId);
     } catch (e) {
       console.error("Score refresh failed:", e);
@@ -764,12 +807,25 @@ export default function Home() {
     setBusy(true);
     try {
       const res = await fetch("/api/state", { method: "DELETE" });
-      if (res.status === 401) { alert("You must be logged in to reset the league."); return; }
-      if (res.status === 403) { alert("Only the commissioner can reset the league.\n\nIf you are the commissioner, try logging out and back in to refresh your session."); return; }
-      if (!res.ok) { alert(`Reset failed (${res.status}). Please try again.`); return; }
+      if (res.status === 401) {
+        alert("You must be logged in to reset the league.");
+        return;
+      }
+      if (res.status === 403) {
+        alert(
+          "Only the commissioner can reset the league.\n\nIf you are the commissioner, try logging out and back in to refresh your session.",
+        );
+        return;
+      }
+      if (!res.ok) {
+        alert(`Reset failed (${res.status}). Please try again.`);
+        return;
+      }
       const result = await res.json();
       if (result?.archiveError) {
-        alert(`Warning: standings could not be saved to history before reset.\n\nError: ${result.archiveError}\n\nThe league has been reset but this tournament's data was not archived.`);
+        alert(
+          `Warning: standings could not be saved to history before reset.\n\nError: ${result.archiveError}\n\nThe league has been reset but this tournament's data was not archived.`,
+        );
       }
       setSchedule(null);
       setErr("");
@@ -789,13 +845,13 @@ export default function Home() {
 
   const sendChallenge = async () => {
     if (!challengeOpponent || !challengeAmount) return;
-    setChallengeErr('');
+    setChallengeErr("");
     try {
-      const res = await fetch('/api/challenges', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: 'create',
+          action: "create",
           opponentName: challengeOpponent,
           amount: challengeAmount,
           tournId: s?.tournId,
@@ -803,23 +859,23 @@ export default function Home() {
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setChallengeErr(d.error || 'Failed to send challenge');
+        setChallengeErr(d.error || "Failed to send challenge");
         return;
       }
-      setChallengeOpponent('');
-      setChallengeAmount('');
-      setChallengeErr('');
+      setChallengeOpponent("");
+      setChallengeAmount("");
+      setChallengeErr("");
       if (s?.tournId) fetchChallenges(s.tournId);
     } catch (e) {
-      setChallengeErr('Failed to send challenge');
+      setChallengeErr("Failed to send challenge");
     }
   };
 
   const respondChallenge = async (challengeId, action) => {
     try {
-      await fetch('/api/challenges', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch("/api/challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, challengeId }),
       });
       if (s?.tournId) fetchChallenges(s.tournId);
@@ -829,9 +885,9 @@ export default function Home() {
   // scroll highlighted result into view
   useEffect(() => {
     if (highlightIndex >= 0 && resultsRef.current) {
-      const items = resultsRef.current.querySelectorAll('.result-item');
+      const items = resultsRef.current.querySelectorAll(".result-item");
       if (items[highlightIndex]) {
-        items[highlightIndex].scrollIntoView({ block: 'nearest' });
+        items[highlightIndex].scrollIntoView({ block: "nearest" });
       }
     }
   }, [highlightIndex]);
@@ -839,17 +895,23 @@ export default function Home() {
   // Close tournament dropdown on outside click
   useEffect(() => {
     function handleClick(e) {
-      if (tournSelectorRef.current && !tournSelectorRef.current.contains(e.target)) {
+      if (
+        tournSelectorRef.current &&
+        !tournSelectorRef.current.contains(e.target)
+      ) {
         setTournDropdownOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   // Fetch history detail when viewingTournament changes
   useEffect(() => {
-    if (!viewingTournament) { setHistoryData(null); return; }
+    if (!viewingTournament) {
+      setHistoryData(null);
+      return;
+    }
     fetch(`/api/history?id=${viewingTournament}`)
       .then((r) => r.json())
       .then(setHistoryData)
@@ -863,7 +925,9 @@ export default function Home() {
     if (!s?.draftComplete || !s?.picks?.length) return;
     const allDone = s.picks.every((p) => {
       const sc = s.scores?.[p.playerId];
-      return sc && (sc.thru === 'F' || sc.status === 'cut' || sc.status === 'wd');
+      return (
+        sc && (sc.thru === "F" || sc.status === "cut" || sc.status === "wd")
+      );
     });
     if (!allDone) return;
     // Build teams to find the leader
@@ -909,11 +973,13 @@ export default function Home() {
 
   // ── derived ──
   const lastPickIndex = (s?.currentPickIndex ?? 0) - 1;
-  const lastPick = lastPickIndex >= 0 ? (s?.picks?.[lastPickIndex] ?? null) : null;
+  const lastPick =
+    lastPickIndex >= 0 ? (s?.picks?.[lastPickIndex] ?? null) : null;
   const lastPickDrafter = lastPick ? s.drafters[lastPick.drafterIndex] : null;
-  const lastPickRound = lastPick && s.drafters.length > 0
-    ? Math.floor(lastPickIndex / s.drafters.length) + 1
-    : null;
+  const lastPickRound =
+    lastPick && s.drafters.length > 0
+      ? Math.floor(lastPickIndex / s.drafters.length) + 1
+      : null;
 
   const drafted = new Set((s?.picks || []).map((p) => p.playerId));
   const filteredField = (s?.field || [])
@@ -924,14 +990,14 @@ export default function Home() {
 
   // Challenges: position map and current user's position
   const posMap = {};
-  teams.forEach(t => {
-    if (typeof t.position === 'number') posMap[t.name] = t.position;
+  teams.forEach((t) => {
+    if (typeof t.position === "number") posMap[t.name] = t.position;
   });
-  const myTeam = teams.find(t => t.name === session?.user?.name);
+  const myTeam = teams.find((t) => t.name === session?.user?.name);
   const myPosition = myTeam?.position ?? null;
 
   const posLabel = (pos) => {
-    if (pos == null) return '–';
+    if (pos == null) return "–";
     return `#${pos}`;
   };
 
@@ -956,14 +1022,21 @@ export default function Home() {
 
   return (
     <>
-      <a href="#main-content" className="skip-nav">Skip to main content</a>
-      <div role="status" aria-live="polite" className="sr-only">{liveMsg}</div>
+      <a href="#main-content" className="skip-nav">
+        Skip to main content
+      </a>
+      <div role="status" aria-live="polite" className="sr-only">
+        {liveMsg}
+      </div>
       <Head>
         <title>
-          {!s?.configured ? "Setup — Randy's A Hack"
-            : inLobby ? "Lobby — Randy's A Hack"
-            : inDraft ? "Draft — Randy's A Hack"
-            : "Scoreboard — Randy's A Hack"}
+          {!s?.configured
+            ? "Setup — Randy's A Hack"
+            : inLobby
+              ? "Lobby — Randy's A Hack"
+              : inDraft
+                ? "Draft — Randy's A Hack"
+                : "Scoreboard — Randy's A Hack"}
         </title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -974,20 +1047,28 @@ export default function Home() {
 
       <header>
         <div className="tourn-selector" ref={tournSelectorRef}>
-          <button className="tourn-btn" onClick={() => setTournDropdownOpen((o) => !o)}>
+          <button
+            className="tourn-btn"
+            onClick={() => setTournDropdownOpen((o) => !o)}
+          >
             <span className="tourn-name">
               {viewingTournament && historyData
                 ? `${historyData.tournament.name} — ${historyData.tournament.year}`
                 : s?.tournamentName || "Randy's A Hack"}
             </span>
-            <span className="tourn-chevron">{tournDropdownOpen ? "▲" : "▼"}</span>
+            <span className="tourn-chevron">
+              {tournDropdownOpen ? "▲" : "▼"}
+            </span>
           </button>
           {tournDropdownOpen && (
             <div className="tourn-dropdown">
               <div className="tourn-dropdown-section">Current</div>
               <div
                 className={`tourn-dropdown-item current ${!viewingTournament ? "active" : ""}`}
-                onClick={() => { setViewingTournament(null); setTournDropdownOpen(false); }}
+                onClick={() => {
+                  setViewingTournament(null);
+                  setTournDropdownOpen(false);
+                }}
               >
                 <span>{s?.tournamentName || "—"}</span>
                 <span className="badge live-badge">LIVE</span>
@@ -999,12 +1080,19 @@ export default function Home() {
                     <div
                       key={t.id}
                       className={`tourn-dropdown-item ${viewingTournament === t.id ? "active" : ""}`}
-                      onClick={() => { setViewingTournament(t.id); setTournDropdownOpen(false); }}
+                      onClick={() => {
+                        setViewingTournament(t.id);
+                        setTournDropdownOpen(false);
+                      }}
                     >
                       <div>
-                        <div>{t.name} — {t.year}</div>
+                        <div>
+                          {t.name} — {t.year}
+                        </div>
                         {t.winner_name && (
-                          <div className="tourn-winner">Won by {t.winner_name}</div>
+                          <div className="tourn-winner">
+                            Won by {t.winner_name}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1019,7 +1107,13 @@ export default function Home() {
             <span className="badge dim">
               {myName}
               {isCommissioner && (
-                <span className="commissioner-star" title="Commissioner" aria-label="Commissioner">★</span>
+                <span
+                  className="commissioner-star"
+                  title="Commissioner"
+                  aria-label="Commissioner"
+                >
+                  ★
+                </span>
               )}
             </span>
           )}
@@ -1028,10 +1122,7 @@ export default function Home() {
               Reset
             </button>
           )}
-          <button
-            className="btn-ghost"
-            onClick={() => signOut()}
-          >
+          <button className="btn-ghost" onClick={() => signOut()}>
             Log out
           </button>
         </div>
@@ -1046,591 +1137,284 @@ export default function Home() {
         {/* Pull-to-refresh indicator */}
         <div
           className="pull-indicator"
-          style={{ height: isPullRefreshing ? 40 : pullDistance > 0 ? Math.min(pullDistance * 0.5, 40) : 0 }}
+          style={{
+            height: isPullRefreshing
+              ? 40
+              : pullDistance > 0
+                ? Math.min(pullDistance * 0.5, 40)
+                : 0,
+          }}
         >
           {isPullRefreshing ? (
             <span className="pull-spinner">↻</span>
           ) : pullDistance >= pullThreshold ? (
-            <span style={{ color: 'var(--gold)' }}>↻ Release to refresh</span>
+            <span style={{ color: "var(--gold)" }}>↻ Release to refresh</span>
           ) : (
-            <span style={{ transform: `rotate(${(pullDistance / pullMax) * 360}deg)`, display: 'inline-block' }}>↻</span>
-          )}{!isPullRefreshing && (pullDistance >= pullThreshold ? ' Release to refresh' : pullDistance > 5 ? ' Pull to refresh' : '')}
+            <span
+              style={{
+                transform: `rotate(${(pullDistance / pullMax) * 360}deg)`,
+                display: "inline-block",
+              }}
+            >
+              ↻
+            </span>
+          )}
+          {!isPullRefreshing &&
+            (pullDistance >= pullThreshold
+              ? " Release to refresh"
+              : pullDistance > 5
+                ? " Pull to refresh"
+                : "")}
         </div>
 
         {/* ── HISTORY VIEW ── */}
-        {viewingTournament && historyData && (() => {
-          const { tournament, standings, picks } = historyData;
-          // Build teams from standings + picks for the scoreboard
-          const historyTeams = (standings || []).map((st) => {
-            const teamPicks = (picks || []).filter((p) => p.drafter_name === st.drafter_name);
-            const golfers = st.golfer_scores || teamPicks.map((p) => ({
-              name: p.player_name,
-              playerId: p.player_id,
-              total: null,
-              cut: false,
-              counting: false,
-              thru: "F",
-              pos: "–",
-            }));
-            return {
-              name: st.drafter_name,
-              position: st.position,
-              displayPos: st.display_position || (st.position ? `${st.position}` : "–"),
-              teamTotal: st.team_total,
-              golfers,
-            };
-          });
+        {viewingTournament &&
+          historyData &&
+          (() => {
+            const { tournament, standings, picks } = historyData;
+            // Build teams from standings + picks for the scoreboard
+            const historyTeams = (standings || []).map((st) => {
+              const teamPicks = (picks || []).filter(
+                (p) => p.drafter_name === st.drafter_name,
+              );
+              const golfers =
+                st.golfer_scores ||
+                teamPicks.map((p) => ({
+                  name: p.player_name,
+                  playerId: p.player_id,
+                  total: null,
+                  cut: false,
+                  counting: false,
+                  thru: "F",
+                  pos: "–",
+                }));
+              return {
+                name: st.drafter_name,
+                position: st.position,
+                displayPos:
+                  st.display_position || (st.position ? `${st.position}` : "–"),
+                teamTotal: st.team_total,
+                golfers,
+              };
+            });
 
-          return (
-            <>
-              <div className="history-banner">
-                <span className="badge">ARCHIVED</span>
-                <span>{tournament.name} {tournament.year} — Final Standings</span>
-                <button className="btn-ghost" onClick={() => setViewingTournament(null)}>← Back to Live</button>
-              </div>
-              <div className="scoreboard">
-                {historyTeams.map((team, rank) => (
-                  <div key={team.name} className={`team-card ${rank === 0 ? "leader" : ""}`}>
-                    <div className="team-header">
-                      <div className="team-header-inner">
-                        <div className="rank-group">
-                          <span className={`team-rank ${rank === 0 ? "gold" : ""}`}>
-                            {team.displayPos}
-                          </span>
-                        </div>
-                        <span className="team-name">{team.name}</span>
-                        <span className={`team-total ${scoreClass(team.teamTotal)}`}>
-                          {fmtScore(team.teamTotal)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="team-golfers">
-                      {(team.golfers || []).map((g, gi) => (
-                        <div key={g.playerId || gi} className="golfer-row">
-                          <span className={`golfer-name ${g.counting ? "counting" : "nc"}`}>
-                            {g.name}
-                            {g.counting && <span className="star" aria-hidden="true">★</span>}
-                            {!g.counting && <span className="ex" aria-hidden="true">✕</span>}
-                          </span>
-                          <span className={`golfer-score ${g.cut ? "" : scoreClass(g.total)}`}>
-                            {g.cut ? "–" : fmtScore(g.total)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          );
-        })()}
-
-        {/* ── LIVE VIEW (hidden when viewing history) ── */}
-        {!viewingTournament && <>
-
-        {/* ── SETUP: Tournament Picker ── */}
-        {!s.configured && (
-          <div className="panel">
-            <h2>Create a League</h2>
-
-            {loadingSchedule && (
-              <div className="empty-state">Loading tournament schedule...</div>
-            )}
-
-            {!loadingSchedule && schedule && (
+            return (
               <>
-                <div className="field" style={{ marginBottom: 12 }}>
-                  <label>Tournament ({CURRENT_YEAR})</label>
-                  <select
-                    value={selectedTournId}
-                    onChange={(e) => setSelectedTournId(e.target.value)}
+                <div className="history-banner">
+                  <span className="badge">ARCHIVED</span>
+                  <span>
+                    {tournament.name} {tournament.year} — Final Standings
+                  </span>
+                  <button
+                    className="btn-ghost"
+                    onClick={() => setViewingTournament(null)}
                   >
-                    <option value="" disabled>
-                      Select a tournament...
-                    </option>
-                    {(() => {
-                      const todayStr = new Date().toISOString().slice(0, 10);
-                      const upcoming = schedule.filter((t) => {
-                        if (!t.startDate) return true; // keep if no date info
-                        // startDate may be "YYYY-MM-DD" or "Mon DD, YYYY" — try ISO first
-                        const iso = t.startDate.match(/^\d{4}-\d{2}-\d{2}/)
-                          ? t.startDate.slice(0, 10)
-                          : new Date(t.startDate).toISOString().slice(0, 10);
-                        return iso >= todayStr;
-                      });
-                      if (!upcoming.length) {
-                        return (
-                          <option value="" disabled>
-                            No upcoming tournaments found
-                          </option>
-                        );
-                      }
-                      return upcoming.map((t) => {
-                        const id = t.tournId || t.id;
-                        const name = t.name || t.tournamentName || id;
-                        const dates = t.startDate ? ` — ${t.startDate}` : "";
-                        return (
-                          <option key={id} value={id}>
-                            {name}
-                            {dates}
-                          </option>
-                        );
-                      });
-                    })()}
-                  </select>
-                </div>
-
-                <button
-                  className="btn"
-                  onClick={loadTournament}
-                  disabled={busy || !selectedTournId}
-                >
-                  Create League
-                </button>
-              </>
-            )}
-
-            {!loadingSchedule && !schedule && (
-              <div>
-                <div className="empty-state">
-                  Could not load tournament schedule.
-                </div>
-                <button
-                  className="btn"
-                  onClick={fetchSchedule}
-                  style={{ marginTop: 8 }}
-                >
-                  Retry
-                </button>
-              </div>
-            )}
-
-            {err && <div className="error" role="alert">{err}</div>}
-          </div>
-        )}
-
-        {/* ── LOBBY: Join & Wait ── */}
-        {inLobby && (
-          <div className="panel">
-            <h2>Lobby</h2>
-            <div className="configured-note">
-              {s.tournamentName} — {s.field.length} players in field
-            </div>
-
-            <div className="drafter-section">
-              <div className="section-title" style={{ marginTop: 16 }}>
-                Drafters ({s.drafters.length})
-              </div>
-              <div className="tags">
-                {s.drafters.map((d) => (
-                  <div key={d} className="tag">
-                    {d}
-                    {d === s.creator ? " (host)" : ""}
-                    {d === myName && d !== s.creator && (
-                      <button onClick={leaveDraft} disabled={busy} aria-label={`Remove ${d}`}>
-                        ×
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {!isJoined && (
-                <div className="field" style={{ marginTop: 16 }}>
-                  <button className="btn" onClick={joinDraft} disabled={busy}>
-                    Join as {myName}
+                    ← Back to Live
                   </button>
                 </div>
-              )}
-
-              {isJoined && !isCreator && (
-                <div className="empty-state" style={{ marginTop: 12 }}>
-                  You&apos;re in! Waiting for {s.creator} to start the draft...
-                </div>
-              )}
-
-              {isCreator && (
-                <div className="field" style={{ marginTop: 16 }}>
-                  <label>Add Drafter</label>
-                  <div className="row-gap">
-                    <input
-                      value={addDrafterName}
-                      onChange={(e) => setAddDrafterName(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addDrafter()}
-                      placeholder="Drafter name..."
-                    />
-                    <button
-                      className="btn"
-                      onClick={addDrafter}
-                      disabled={busy}
+                <div className="scoreboard">
+                  {historyTeams.map((team, rank) => (
+                    <div
+                      key={team.name}
+                      className={`team-card ${rank === 0 ? "leader" : ""}`}
                     >
-                      Add
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {isCreator && s.drafters.length >= 2 && (
-                <button
-                  className="btn"
-                  style={{ marginTop: 16 }}
-                  onClick={startDraft}
-                  disabled={busy}
-                >
-                  Start Snake Draft ({s.drafters.length} drafters ·{" "}
-                  {PICKS_PER_DRAFTER} picks each)
-                </button>
-              )}
-
-              {isCreator && s.drafters.length < 2 && (
-                <div className="empty-state" style={{ marginTop: 12 }}>
-                  Waiting for more drafters to join...
-                </div>
-              )}
-            </div>
-
-            {err && <div className="error" role="alert">{err}</div>}
-          </div>
-        )}
-
-        {/* ── TABS ── */}
-        {s.draftOrder?.length > 0 && (
-          <>
-            <div className="tabs" role="tablist">
-              <button
-                className={`tab ${tab === "draft" ? "active" : ""}`}
-                role="tab"
-                aria-selected={tab === "draft"}
-                aria-controls="panel-draft"
-                onClick={() => setTab("draft")}
-              >
-                Draft Board
-              </button>
-              <button
-                className={`tab ${tab === "scores" ? "active" : ""}`}
-                role="tab"
-                aria-selected={tab === "scores"}
-                aria-controls="panel-scores"
-                onClick={() => setTab("scores")}
-              >
-                Scoreboard
-              </button>
-              {showChallenges && (
-                <button
-                  className={`tab challenges-tab ${tab === "challenges" ? "active" : ""}`}
-                  role="tab"
-                  aria-selected={tab === "challenges"}
-                  aria-controls="panel-challenges"
-                  onClick={() => setTab("challenges")}
-                >
-                  Challenges
-                </button>
-              )}
-            </div>
-
-            {/* DRAFT TAB */}
-            {tab === "draft" && (
-              <div role="tabpanel" id="panel-draft">
-                {inDraft && (isMyTurn || isCreator) && (
-                  <div className="panel search-panel">
-                    <h3>
-                      {isMyTurn
-                        ? "Your Pick!"
-                        : `Picking for ${currentDrafterName}`}{" "}
-                      — Pick {s.currentPickIndex + 1} of {s.draftOrder.length}
-                    </h3>
-                    <div className="row-gap" style={{ marginBottom: 10 }}>
-                      <input
-                        aria-label="Search player"
-                        value={searchQ}
-                        onChange={(e) => { setSearchQ(e.target.value); setHighlightIndex(-1); }}
-                        placeholder="Search player..."
-                        onKeyDown={(e) => {
-                          if (e.key === 'ArrowDown') {
-                            e.preventDefault();
-                            setHighlightIndex(prev => {
-                              let next = prev + 1;
-                              while (next < filteredField.length && drafted.has(filteredField[next].playerId)) next++;
-                              return next < filteredField.length ? next : prev;
-                            });
-                          } else if (e.key === 'ArrowUp') {
-                            e.preventDefault();
-                            setHighlightIndex(prev => {
-                              let next = prev - 1;
-                              while (next >= 0 && drafted.has(filteredField[next].playerId)) next--;
-                              return next >= 0 ? next : prev;
-                            });
-                          } else if (e.key === 'Enter') {
-                            if (highlightIndex >= 0 && highlightIndex < filteredField.length) {
-                              const p = filteredField[highlightIndex];
-                              if (!drafted.has(p.playerId)) makePick(p.playerId, p.name);
-                            }
-                          } else if (e.key === 'Escape') {
-                            setHighlightIndex(-1);
-                          }
-                        }}
-                      />
-                    </div>
-                    <div className="results" ref={resultsRef}>
-                      {filteredField.map((p, i) => (
-                        <div
-                          key={p.playerId}
-                          className={`result-item ${drafted.has(p.playerId) ? "drafted" : ""} ${i === highlightIndex ? "highlighted" : ""}`}
-                          role="button"
-                          tabIndex={drafted.has(p.playerId) ? -1 : 0}
-                          onClick={() =>
-                            !drafted.has(p.playerId) &&
-                            makePick(p.playerId, p.name)
-                          }
-                          onKeyDown={(e) => {
-                            if ((e.key === 'Enter' || e.key === ' ') && !drafted.has(p.playerId)) {
-                              e.preventDefault();
-                              makePick(p.playerId, p.name);
-                            }
-                          }}
-                        >
-                          <span>{p.name}</span>
-                          <span className="muted">
-                            {p.worldRank < 999 ? `WR #${p.worldRank}` : ""}{" "}
-                            {drafted.has(p.playerId) ? "· drafted" : ""}
+                      <div className="team-header">
+                        <div className="team-header-inner">
+                          <div className="rank-group">
+                            <span
+                              className={`team-rank ${rank === 0 ? "gold" : ""}`}
+                            >
+                              {team.displayPos}
+                            </span>
+                          </div>
+                          <span className="team-name">{team.name}</span>
+                          <span
+                            className={`team-total ${scoreClass(team.teamTotal)}`}
+                          >
+                            {fmtScore(team.teamTotal)}
                           </span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {inDraft && !isMyTurn && !isCreator && (
-                  <div className="panel">
-                    <h3>
-                      Pick {s.currentPickIndex + 1} of {s.draftOrder.length}
-                    </h3>
-                    <div className="empty-state">
-                      Waiting for {currentDrafterName} to pick...
-                    </div>
-                  </div>
-                )}
-
-                {lastPick && (
-                  <div className="last-pick-banner">
-                    <span className="last-pick-label">Last Pick</span>
-                    <span className="last-pick-body">
-                      <strong>{lastPickDrafter}</strong> selected <strong>{lastPick.name}</strong>
-                    </span>
-                    <span className="last-pick-meta">Rd {lastPickRound} · Pick #{lastPickIndex + 1}</span>
-                  </div>
-                )}
-
-                {draftDone && (
-                  <div className="complete-banner">Draft Complete</div>
-                )}
-
-                <div className="section-title">Draft Board</div>
-                {s.drafters?.length > 0 && s.draftOrder?.length > 0 && (() => {
-                  const { grid, rounds, activeDrafterIdx, activeRound } = buildDraftGrid(
-                    s.drafters, s.draftOrder, s.picks || []
-                  );
-                  return (
-                    <div className="draft-table-wrap">
-                      <table className="draft-table">
-                        <thead>
-                          <tr>
-                            <th className="dt-participant">Participant</th>
-                            {Array.from({ length: rounds }, (_, r) => (
-                              <th key={r} className="dt-round">Rd {r + 1}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {s.drafters.map((drafter, di) => (
-                            <tr key={drafter}>
-                              <td className="dt-participant-cell">{drafter}</td>
-                              {Array.from({ length: rounds }, (_, r) => {
-                                const pick = grid[di][r];
-                                const isActive = inDraft && di === activeDrafterIdx && r === activeRound;
-                                return (
-                                  <td
-                                    key={r}
-                                    className={`dt-pick-cell ${isActive ? "dt-active" : ""} ${pick ? "dt-filled" : "dt-empty"}`}
-                                  >
-                                    {pick ? pick.name : isActive ? <span className="dt-picking">picking…</span> : null}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  );
-                })()}
-
-                {err && <div className="error" role="alert">{err}</div>}
-              </div>
-            )}
-
-            {/* SCORES TAB */}
-            {tab === "scores" && (
-              <div role="tabpanel" id="panel-scores">
-                {!draftDone ? (
-                  <div className="empty-state">
-                    Complete the draft to see scores.
-                  </div>
-                ) : teams.length === 0 ? (
-                  <div className="empty-state">
-                    No scores yet — hit Refresh.
-                  </div>
-                ) : (
-                  <div className="scoreboard-layout">
-                    {/* LEFT: scoreboard column */}
-                    <div className="scoreboard-col">
-                      {tournamentComplete && teams[0] && (
-                        <div className="champion-banner">
-                          <div className="champion-trophy">🏆</div>
-                          <div className="champion-label">Champion</div>
-                          <div className="champion-name">{teams[0].name}</div>
-                          <div className="champion-score">
-                            {fmtScore(teams[0].teamTotal)}
-                          </div>
-                          {winnerVenmo && (
-                            <>
-                              <div className="champion-divider" />
-                              <div className="venmo-section">
-                                <a
-                                  className="venmo-link"
-                                  href={`https://account.venmo.com/pay?recipients=${encodeURIComponent(winnerVenmo)}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <span className="venmo-link-icon">V</span>
-                                  Pay {teams[0].name} on Venmo
-                                </a>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      )}
-                      <div className="scoreboard">
-                        {teams.map((team, rank) => (
-                          <div
-                            key={team.name}
-                            className={`team-card ${rank === 0 ? "leader" : ""}`}
-                          >
-                            <div className="team-header">
-                              <div
-                                className={`move-pip ${team.movement > 0 ? "up" : team.movement < 0 ? "down" : ""}`}
-                              />
-                              <div className="team-header-inner">
-                                <div className="rank-group">
-                                  <span
-                                    className={`team-rank ${rank === 0 ? "gold" : ""}`}
-                                  >
-                                    {team.displayPos}
-                                  </span>
-                                  {team.movement !== 0 && (
-                                    <span
-                                      className={`move-indicator ${team.movement > 0 ? "up" : "down"}`}
-                                    >
-                                      {team.movement > 0
-                                        ? `▲${team.movement}`
-                                        : `▼${Math.abs(team.movement)}`}
-                                    </span>
-                                  )}
-                                  {team.movement === 0 && (
-                                    <span className="move-indicator same">–</span>
-                                  )}
-                                </div>
-                                <span className="team-name">{team.name}</span>
-                                <span
-                                  className={`team-total ${scoreClass(team.teamTotal)}`}
-                                >
-                                  {fmtScore(team.teamTotal)}
+                      </div>
+                      <div className="team-golfers">
+                        {(team.golfers || []).map((g, gi) => (
+                          <div key={g.playerId || gi} className="golfer-row">
+                            <span
+                              className={`golfer-name ${g.counting ? "counting" : "nc"}`}
+                            >
+                              {g.name}
+                              {g.counting && (
+                                <span className="star" aria-hidden="true">
+                                  ★
                                 </span>
-                              </div>
-                            </div>
-                            <div className="team-golfers">
-                              {team.golfers.map((g) => (
-                                <div key={g.playerId} className="golfer-row">
-                                  <span
-                                    className={`golfer-name ${g.counting ? "counting" : "nc"}`}
-                                  >
-                                    {g.name}
-                                    {g.counting && (
-                                      <span className="star" aria-hidden="true">★</span>
-                                    )}
-                                    {!g.counting && <span className="ex" aria-hidden="true">✕</span>}
-                                  </span>
-                                  <span
-                                    className={`golfer-status ${g.cut ? "cut" : ""}`}
-                                  >
-                                    {g.cut
-                                      ? g.status.toUpperCase()
-                                      : g.thru === "F"
-                                        ? "Done"
-                                        : g.thru === "–"
-                                          ? ""
-                                          : /^\d+$/.test(g.thru)
-                                            ? `Thru ${g.thru}`
-                                            : g.thru}
-                                  </span>
-                                  <span
-                                    className={`golfer-score ${g.cut ? "" : scoreClass(g.total)}`}
-                                  >
-                                    {g.cut ? "–" : fmtScore(g.total)}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
+                              )}
+                              {!g.counting && (
+                                <span className="ex" aria-hidden="true">
+                                  ✕
+                                </span>
+                              )}
+                            </span>
+                            <span
+                              className={`golfer-score ${g.cut ? "" : scoreClass(g.total)}`}
+                            >
+                              {g.cut ? "–" : fmtScore(g.total)}
+                            </span>
                           </div>
                         ))}
                       </div>
-                      {s.lastRefreshed && (
-                        <div className="last-refreshed">
-                          Last updated: {new Date(s.lastRefreshed).toLocaleString()}
-                        </div>
-                      )}
                     </div>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
 
-                    {/* RIGHT: challenges panel (desktop only) */}
-                    {showChallenges && <div className="challenges-panel">
-                      <ChallengesPanel
-                        challenges={challenges}
-                        drafters={s?.drafters || []}
-                        myName={myName}
-                        session={session}
-                        posMap={posMap}
-                        posLabel={posLabel}
-                        challengeOpponent={challengeOpponent}
-                        setChallengeOpponent={setChallengeOpponent}
-                        challengeAmount={challengeAmount}
-                        setChallengeAmount={setChallengeAmount}
-                        challengeErr={challengeErr}
-                        sendChallenge={sendChallenge}
-                        respondChallenge={respondChallenge}
-                      />
-                    </div>}
+        {/* ── LIVE VIEW (hidden when viewing history) ── */}
+        {!viewingTournament && (
+          <>
+            {/* ── SETUP: Tournament Picker ── */}
+            {!s.configured && (
+              <div className="panel">
+                <h2>Create a League</h2>
+
+                {loadingSchedule && (
+                  <div className="empty-state">
+                    Loading tournament schedule...
                   </div>
                 )}
 
-                {/* COMMISSIONER PANEL */}
-                {isCreator && (
-                  <div className="panel" style={{ marginTop: 16 }}>
-                    <h3>Commissioner</h3>
-
+                {!loadingSchedule && schedule && (
+                  <>
                     <div className="field" style={{ marginBottom: 12 }}>
-                      <label>Challenges</label>
-                      <button
-                        className="btn-ghost"
-                        onClick={() => {
-                          setShowChallenges(v => !v);
-                          if (tab === "challenges") setTab("scores");
-                        }}
+                      <label>Tournament ({CURRENT_YEAR})</label>
+                      <select
+                        value={selectedTournId}
+                        onChange={(e) => setSelectedTournId(e.target.value)}
                       >
-                        {showChallenges ? "Hide Challenges Panel" : "Show Challenges Panel"}
-                      </button>
+                        <option value="" disabled>
+                          Select a tournament...
+                        </option>
+                        {(() => {
+                          const todayStr = new Date()
+                            .toISOString()
+                            .slice(0, 10);
+                          const upcoming = schedule.filter((t) => {
+                            if (!t.startDate) return true; // keep if no date info
+                            // startDate may be "YYYY-MM-DD" or "Mon DD, YYYY" — try ISO first
+                            const iso = t.startDate.match(/^\d{4}-\d{2}-\d{2}/)
+                              ? t.startDate.slice(0, 10)
+                              : new Date(t.startDate)
+                                  .toISOString()
+                                  .slice(0, 10);
+                            return iso >= todayStr;
+                          });
+                          if (!upcoming.length) {
+                            return (
+                              <option value="" disabled>
+                                No upcoming tournaments found
+                              </option>
+                            );
+                          }
+                          return upcoming.map((t) => {
+                            const id = t.tournId || t.id;
+                            const name = t.name || t.tournamentName || id;
+                            const dates = t.startDate
+                              ? ` — ${t.startDate}`
+                              : "";
+                            return (
+                              <option key={id} value={id}>
+                                {name}
+                                {dates}
+                              </option>
+                            );
+                          });
+                        })()}
+                      </select>
                     </div>
 
-                    <div className="field" style={{ marginBottom: 12 }}>
+                    <button
+                      className="btn"
+                      onClick={loadTournament}
+                      disabled={busy || !selectedTournId}
+                    >
+                      Create League
+                    </button>
+                  </>
+                )}
+
+                {!loadingSchedule && !schedule && (
+                  <div>
+                    <div className="empty-state">
+                      Could not load tournament schedule.
+                    </div>
+                    <button
+                      className="btn"
+                      onClick={fetchSchedule}
+                      style={{ marginTop: 8 }}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
+
+                {err && (
+                  <div className="error" role="alert">
+                    {err}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── LOBBY: Join & Wait ── */}
+            {inLobby && (
+              <div className="panel">
+                <h2>Lobby</h2>
+                <div className="configured-note">
+                  {s.tournamentName} — {s.field.length} players in field
+                </div>
+
+                <div className="drafter-section">
+                  <div className="section-title" style={{ marginTop: 16 }}>
+                    Drafters ({s.drafters.length})
+                  </div>
+                  <div className="tags">
+                    {s.drafters.map((d) => (
+                      <div key={d} className="tag">
+                        {d}
+                        {d === s.creator ? " (host)" : ""}
+                        {d === myName && d !== s.creator && (
+                          <button
+                            onClick={leaveDraft}
+                            disabled={busy}
+                            aria-label={`Remove ${d}`}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {!isJoined && (
+                    <div className="field" style={{ marginTop: 16 }}>
+                      <button
+                        className="btn"
+                        onClick={joinDraft}
+                        disabled={busy}
+                      >
+                        Join as {myName}
+                      </button>
+                    </div>
+                  )}
+
+                  {isJoined && !isCreator && (
+                    <div className="empty-state" style={{ marginTop: 12 }}>
+                      You&apos;re in! Waiting for {s.creator} to start the
+                      draft...
+                    </div>
+                  )}
+
+                  {isCreator && (
+                    <div className="field" style={{ marginTop: 16 }}>
                       <label>Add Drafter</label>
                       <div className="row-gap">
                         <input
@@ -1648,107 +1432,589 @@ export default function Home() {
                         </button>
                       </div>
                     </div>
+                  )}
 
-                    <div className="field" style={{ marginBottom: 8 }}>
-                      <label>Assign Golfer to Drafter</label>
-                      <select
-                        value={assignDrafter}
-                        onChange={(e) => setAssignDrafter(e.target.value)}
-                        style={{ marginBottom: 8 }}
-                      >
-                        <option value="" disabled>
-                          Select drafter...
-                        </option>
-                        {s.drafters.map((d) => (
-                          <option key={d} value={d}>
-                            {d}
-                          </option>
-                        ))}
-                      </select>
-                      {assignDrafter && (
-                        <>
-                          <input
-                            aria-label="Search player"
-                            value={assignSearch}
-                            onChange={(e) => setAssignSearch(e.target.value)}
-                            placeholder="Search player..."
-                            style={{ marginBottom: 6 }}
-                          />
-                          <div className="results" style={{ maxHeight: 200 }}>
-                            {(s.field || [])
-                              .filter((p) =>
-                                p.name
-                                  .toLowerCase()
-                                  .includes(assignSearch.toLowerCase()),
-                              )
-                              .slice(0, 15)
-                              .map((p) => {
-                                const taken = (s.picks || []).some(
-                                  (pk) => pk.playerId === p.playerId,
-                                );
-                                return (
-                                  <div
-                                    key={p.playerId}
-                                    className={`result-item ${taken ? "drafted" : ""}`}
-                                    role="button"
-                                    tabIndex={taken ? -1 : 0}
-                                    onClick={() =>
-                                      !taken &&
-                                      assignGolferToDrafter(p.playerId, p.name)
-                                    }
-                                    onKeyDown={(e) => {
-                                      if ((e.key === 'Enter' || e.key === ' ') && !taken) {
-                                        e.preventDefault();
-                                        assignGolferToDrafter(p.playerId, p.name);
-                                      }
-                                    }}
-                                  >
-                                    <span>{p.name}</span>
-                                    <span className="muted">
-                                      {p.worldRank < 999
-                                        ? `WR #${p.worldRank}`
-                                        : ""}
-                                      {taken ? " · drafted" : ""}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                          </div>
-                        </>
-                      )}
+                  {isCreator && s.drafters.length >= 2 && (
+                    <button
+                      className="btn"
+                      style={{ marginTop: 16 }}
+                      onClick={startDraft}
+                      disabled={busy}
+                    >
+                      Start Snake Draft ({s.drafters.length} drafters ·{" "}
+                      {PICKS_PER_DRAFTER} picks each)
+                    </button>
+                  )}
+
+                  {isCreator && s.drafters.length < 2 && (
+                    <div className="empty-state" style={{ marginTop: 12 }}>
+                      Waiting for more drafters to join...
                     </div>
+                  )}
+                </div>
 
-                    {err && <div className="error" role="alert">{err}</div>}
+                {err && (
+                  <div className="error" role="alert">
+                    {err}
                   </div>
                 )}
               </div>
             )}
 
-            {/* CHALLENGES TAB (mobile only) */}
-            {tab === "challenges" && showChallenges && (
-              <div role="tabpanel" id="panel-challenges">
-                <ChallengesPanel
-                  challenges={challenges}
-                  drafters={s?.drafters || []}
-                  myName={myName}
-                  session={session}
-                  posMap={posMap}
-                  posLabel={posLabel}
-                  challengeOpponent={challengeOpponent}
-                  setChallengeOpponent={setChallengeOpponent}
-                  challengeAmount={challengeAmount}
-                  setChallengeAmount={setChallengeAmount}
-                  challengeErr={challengeErr}
-                  sendChallenge={sendChallenge}
-                  respondChallenge={respondChallenge}
-                />
-              </div>
+            {/* ── TABS ── */}
+            {s.draftOrder?.length > 0 && (
+              <>
+                <div className="tabs" role="tablist">
+                  <button
+                    className={`tab ${tab === "draft" ? "active" : ""}`}
+                    role="tab"
+                    aria-selected={tab === "draft"}
+                    aria-controls="panel-draft"
+                    onClick={() => setTab("draft")}
+                  >
+                    Draft Board
+                  </button>
+                  <button
+                    className={`tab ${tab === "scores" ? "active" : ""}`}
+                    role="tab"
+                    aria-selected={tab === "scores"}
+                    aria-controls="panel-scores"
+                    onClick={() => setTab("scores")}
+                  >
+                    Scoreboard
+                  </button>
+                  {showChallenges && (
+                    <button
+                      className={`tab challenges-tab ${tab === "challenges" ? "active" : ""}`}
+                      role="tab"
+                      aria-selected={tab === "challenges"}
+                      aria-controls="panel-challenges"
+                      onClick={() => setTab("challenges")}
+                    >
+                      Challenges
+                    </button>
+                  )}
+                </div>
+
+                {/* DRAFT TAB */}
+                {tab === "draft" && (
+                  <div role="tabpanel" id="panel-draft">
+                    {inDraft && (isMyTurn || isCreator) && (
+                      <div className="panel search-panel">
+                        <h3>
+                          {isMyTurn
+                            ? "Your Pick!"
+                            : `Picking for ${currentDrafterName}`}{" "}
+                          — Pick {s.currentPickIndex + 1} of{" "}
+                          {s.draftOrder.length}
+                        </h3>
+                        <div className="row-gap" style={{ marginBottom: 10 }}>
+                          <input
+                            aria-label="Search player"
+                            value={searchQ}
+                            onChange={(e) => {
+                              setSearchQ(e.target.value);
+                              setHighlightIndex(-1);
+                            }}
+                            placeholder="Search player..."
+                            onKeyDown={(e) => {
+                              if (e.key === "ArrowDown") {
+                                e.preventDefault();
+                                setHighlightIndex((prev) => {
+                                  let next = prev + 1;
+                                  while (
+                                    next < filteredField.length &&
+                                    drafted.has(filteredField[next].playerId)
+                                  )
+                                    next++;
+                                  return next < filteredField.length
+                                    ? next
+                                    : prev;
+                                });
+                              } else if (e.key === "ArrowUp") {
+                                e.preventDefault();
+                                setHighlightIndex((prev) => {
+                                  let next = prev - 1;
+                                  while (
+                                    next >= 0 &&
+                                    drafted.has(filteredField[next].playerId)
+                                  )
+                                    next--;
+                                  return next >= 0 ? next : prev;
+                                });
+                              } else if (e.key === "Enter") {
+                                if (
+                                  highlightIndex >= 0 &&
+                                  highlightIndex < filteredField.length
+                                ) {
+                                  const p = filteredField[highlightIndex];
+                                  if (!drafted.has(p.playerId))
+                                    makePick(p.playerId, p.name);
+                                }
+                              } else if (e.key === "Escape") {
+                                setHighlightIndex(-1);
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="results" ref={resultsRef}>
+                          {filteredField.map((p, i) => (
+                            <div
+                              key={p.playerId}
+                              className={`result-item ${drafted.has(p.playerId) ? "drafted" : ""} ${i === highlightIndex ? "highlighted" : ""}`}
+                              role="button"
+                              tabIndex={drafted.has(p.playerId) ? -1 : 0}
+                              onClick={() =>
+                                !drafted.has(p.playerId) &&
+                                makePick(p.playerId, p.name)
+                              }
+                              onKeyDown={(e) => {
+                                if (
+                                  (e.key === "Enter" || e.key === " ") &&
+                                  !drafted.has(p.playerId)
+                                ) {
+                                  e.preventDefault();
+                                  makePick(p.playerId, p.name);
+                                }
+                              }}
+                            >
+                              <span>{p.name}</span>
+                              <span className="muted">
+                                {p.worldRank < 999 ? `WR #${p.worldRank}` : ""}{" "}
+                                {drafted.has(p.playerId) ? "· drafted" : ""}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {inDraft && !isMyTurn && !isCreator && (
+                      <div className="panel">
+                        <h3>
+                          Pick {s.currentPickIndex + 1} of {s.draftOrder.length}
+                        </h3>
+                        <div className="empty-state">
+                          Waiting for {currentDrafterName} to pick...
+                        </div>
+                      </div>
+                    )}
+
+                    {lastPick && (
+                      <div className="last-pick-banner">
+                        <span className="last-pick-label">Last Pick</span>
+                        <span className="last-pick-body">
+                          <strong>{lastPickDrafter}</strong> selected{" "}
+                          <strong>{lastPick.name}</strong>
+                        </span>
+                        <span className="last-pick-meta">
+                          Rd {lastPickRound} · Pick #{lastPickIndex + 1}
+                        </span>
+                      </div>
+                    )}
+
+                    {draftDone && (
+                      <div className="complete-banner">Draft Complete</div>
+                    )}
+
+                    <div className="section-title">Draft Board</div>
+                    {s.drafters?.length > 0 &&
+                      s.draftOrder?.length > 0 &&
+                      (() => {
+                        const { grid, rounds, activeDrafterIdx, activeRound } =
+                          buildDraftGrid(
+                            s.drafters,
+                            s.draftOrder,
+                            s.picks || [],
+                          );
+                        return (
+                          <div className="draft-table-wrap">
+                            <table className="draft-table">
+                              <thead>
+                                <tr>
+                                  <th className="dt-participant">
+                                    Participant
+                                  </th>
+                                  {Array.from({ length: rounds }, (_, r) => (
+                                    <th key={r} className="dt-round">
+                                      Rd {r + 1}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {s.drafters.map((drafter, di) => (
+                                  <tr key={drafter}>
+                                    <td className="dt-participant-cell">
+                                      {drafter}
+                                    </td>
+                                    {Array.from({ length: rounds }, (_, r) => {
+                                      const pick = grid[di][r];
+                                      const isActive =
+                                        inDraft &&
+                                        di === activeDrafterIdx &&
+                                        r === activeRound;
+                                      return (
+                                        <td
+                                          key={r}
+                                          className={`dt-pick-cell ${isActive ? "dt-active" : ""} ${pick ? "dt-filled" : "dt-empty"}`}
+                                        >
+                                          {pick ? (
+                                            pick.name
+                                          ) : isActive ? (
+                                            <span className="dt-picking">
+                                              picking…
+                                            </span>
+                                          ) : null}
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })()}
+
+                    {err && (
+                      <div className="error" role="alert">
+                        {err}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* SCORES TAB */}
+                {tab === "scores" && (
+                  <div role="tabpanel" id="panel-scores">
+                    {!draftDone ? (
+                      <div className="empty-state">
+                        Complete the draft to see scores.
+                      </div>
+                    ) : teams.length === 0 ? (
+                      <div className="empty-state">
+                        No scores yet — hit Refresh.
+                      </div>
+                    ) : (
+                      <div className="scoreboard-layout">
+                        {/* LEFT: scoreboard column */}
+                        <div className="scoreboard-col">
+                          {tournamentComplete && teams[0] && (
+                            <div className="champion-banner">
+                              <div className="champion-trophy">🏆</div>
+                              <div className="champion-label">Champion</div>
+                              <div className="champion-name">
+                                {teams[0].name}
+                              </div>
+                              <div className="champion-score">
+                                {fmtScore(teams[0].teamTotal)}
+                              </div>
+                              {winnerVenmo && (
+                                <>
+                                  <div className="champion-divider" />
+                                  <div className="venmo-section">
+                                    <a
+                                      className="venmo-link"
+                                      href={`https://account.venmo.com/pay?recipients=${encodeURIComponent(winnerVenmo)}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      <span className="venmo-link-icon">V</span>
+                                      Pay {teams[0].name} on Venmo
+                                    </a>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
+                          <div className="scoreboard">
+                            {teams.map((team, rank) => (
+                              <div
+                                key={team.name}
+                                className={`team-card ${rank === 0 ? "leader" : ""}`}
+                              >
+                                <div className="team-header">
+                                  <div
+                                    className={`move-pip ${team.movement > 0 ? "up" : team.movement < 0 ? "down" : ""}`}
+                                  />
+                                  <div className="team-header-inner">
+                                    <div className="rank-group">
+                                      <span
+                                        className={`team-rank ${rank === 0 ? "gold" : ""}`}
+                                      >
+                                        {team.displayPos}
+                                      </span>
+                                      {team.movement !== 0 && (
+                                        <span
+                                          className={`move-indicator ${team.movement > 0 ? "up" : "down"}`}
+                                        >
+                                          {team.movement > 0
+                                            ? `▲${team.movement}`
+                                            : `▼${Math.abs(team.movement)}`}
+                                        </span>
+                                      )}
+                                      {team.movement === 0 && (
+                                        <span className="move-indicator same">
+                                          –
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className="team-name">
+                                      {team.name}
+                                    </span>
+                                    <span
+                                      className={`team-total ${scoreClass(team.teamTotal)}`}
+                                    >
+                                      {fmtScore(team.teamTotal)}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="team-golfers">
+                                  {team.golfers.map((g) => (
+                                    <div
+                                      key={g.playerId}
+                                      className="golfer-row"
+                                    >
+                                      <span
+                                        className={`golfer-name ${g.counting ? "counting" : "nc"}`}
+                                      >
+                                        {g.name}
+                                        {g.counting && (
+                                          <span
+                                            className="star"
+                                            aria-hidden="true"
+                                          >
+                                            ★
+                                          </span>
+                                        )}
+                                        {!g.counting && (
+                                          <span
+                                            className="ex"
+                                            aria-hidden="true"
+                                          >
+                                            ✕
+                                          </span>
+                                        )}
+                                      </span>
+                                      <span
+                                        className={`golfer-status ${g.cut ? "cut" : ""}`}
+                                      >
+                                        {g.cut
+                                          ? g.status.toUpperCase()
+                                          : g.thru === "F"
+                                            ? "Done"
+                                            : g.thru === "–"
+                                              ? ""
+                                              : /^\d+$/.test(g.thru)
+                                                ? `Thru ${g.thru}`
+                                                : g.thru}
+                                      </span>
+                                      <span
+                                        className={`golfer-score ${g.cut ? "" : scoreClass(g.total)}`}
+                                      >
+                                        {g.cut ? "–" : fmtScore(g.total)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {s.lastRefreshed && (
+                            <div className="last-refreshed">
+                              Last updated:{" "}
+                              {new Date(s.lastRefreshed).toLocaleString()}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* RIGHT: challenges panel (desktop only) */}
+                        {showChallenges && (
+                          <div className="challenges-panel">
+                            <ChallengesPanel
+                              challenges={challenges}
+                              drafters={s?.drafters || []}
+                              myName={myName}
+                              session={session}
+                              posMap={posMap}
+                              posLabel={posLabel}
+                              challengeOpponent={challengeOpponent}
+                              setChallengeOpponent={setChallengeOpponent}
+                              challengeAmount={challengeAmount}
+                              setChallengeAmount={setChallengeAmount}
+                              challengeErr={challengeErr}
+                              sendChallenge={sendChallenge}
+                              respondChallenge={respondChallenge}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* COMMISSIONER PANEL */}
+                    {isCreator && (
+                      <div className="panel" style={{ marginTop: 16 }}>
+                        <h3>Commissioner</h3>
+
+                        <div className="field" style={{ marginBottom: 12 }}>
+                          <label>Challenges</label>
+                          <button
+                            className="btn-ghost"
+                            onClick={() => {
+                              setShowChallenges((v) => !v);
+                              if (tab === "challenges") setTab("scores");
+                            }}
+                          >
+                            {showChallenges
+                              ? "Hide Challenges Panel"
+                              : "Show Challenges Panel"}
+                          </button>
+                        </div>
+
+                        <div className="field" style={{ marginBottom: 12 }}>
+                          <label>Add Drafter</label>
+                          <div className="row-gap">
+                            <input
+                              value={addDrafterName}
+                              onChange={(e) =>
+                                setAddDrafterName(e.target.value)
+                              }
+                              onKeyDown={(e) =>
+                                e.key === "Enter" && addDrafter()
+                              }
+                              placeholder="Drafter name..."
+                            />
+                            <button
+                              className="btn"
+                              onClick={addDrafter}
+                              disabled={busy}
+                            >
+                              Add
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="field" style={{ marginBottom: 8 }}>
+                          <label>Assign Golfer to Drafter</label>
+                          <select
+                            value={assignDrafter}
+                            onChange={(e) => setAssignDrafter(e.target.value)}
+                            style={{ marginBottom: 8 }}
+                          >
+                            <option value="" disabled>
+                              Select drafter...
+                            </option>
+                            {s.drafters.map((d) => (
+                              <option key={d} value={d}>
+                                {d}
+                              </option>
+                            ))}
+                          </select>
+                          {assignDrafter && (
+                            <>
+                              <input
+                                aria-label="Search player"
+                                value={assignSearch}
+                                onChange={(e) =>
+                                  setAssignSearch(e.target.value)
+                                }
+                                placeholder="Search player..."
+                                style={{ marginBottom: 6 }}
+                              />
+                              <div
+                                className="results"
+                                style={{ maxHeight: 200 }}
+                              >
+                                {(s.field || [])
+                                  .filter((p) =>
+                                    p.name
+                                      .toLowerCase()
+                                      .includes(assignSearch.toLowerCase()),
+                                  )
+                                  .slice(0, 15)
+                                  .map((p) => {
+                                    const taken = (s.picks || []).some(
+                                      (pk) => pk.playerId === p.playerId,
+                                    );
+                                    return (
+                                      <div
+                                        key={p.playerId}
+                                        className={`result-item ${taken ? "drafted" : ""}`}
+                                        role="button"
+                                        tabIndex={taken ? -1 : 0}
+                                        onClick={() =>
+                                          !taken &&
+                                          assignGolferToDrafter(
+                                            p.playerId,
+                                            p.name,
+                                          )
+                                        }
+                                        onKeyDown={(e) => {
+                                          if (
+                                            (e.key === "Enter" ||
+                                              e.key === " ") &&
+                                            !taken
+                                          ) {
+                                            e.preventDefault();
+                                            assignGolferToDrafter(
+                                              p.playerId,
+                                              p.name,
+                                            );
+                                          }
+                                        }}
+                                      >
+                                        <span>{p.name}</span>
+                                        <span className="muted">
+                                          {p.worldRank < 999
+                                            ? `WR #${p.worldRank}`
+                                            : ""}
+                                          {taken ? " · drafted" : ""}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        {err && (
+                          <div className="error" role="alert">
+                            {err}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* CHALLENGES TAB (mobile only) */}
+                {tab === "challenges" && showChallenges && (
+                  <div role="tabpanel" id="panel-challenges">
+                    <ChallengesPanel
+                      challenges={challenges}
+                      drafters={s?.drafters || []}
+                      myName={myName}
+                      session={session}
+                      posMap={posMap}
+                      posLabel={posLabel}
+                      challengeOpponent={challengeOpponent}
+                      setChallengeOpponent={setChallengeOpponent}
+                      challengeAmount={challengeAmount}
+                      setChallengeAmount={setChallengeAmount}
+                      challengeErr={challengeErr}
+                      sendChallenge={sendChallenge}
+                      respondChallenge={respondChallenge}
+                    />
+                  </div>
+                )}
+              </>
             )}
+
+            {/* end live view */}
           </>
         )}
-
-        {/* end live view */}
-        </>}
       </main>
     </>
   );
@@ -1756,18 +2022,27 @@ export default function Home() {
 
 // ── ChallengesPanel component ──────────────────────────────────────────────────
 function ChallengesPanel({
-  challenges, drafters, myName, session, posMap, posLabel,
-  challengeOpponent, setChallengeOpponent,
-  challengeAmount, setChallengeAmount,
-  challengeErr, sendChallenge, respondChallenge,
+  challenges,
+  drafters,
+  myName,
+  session,
+  posMap,
+  posLabel,
+  challengeOpponent,
+  setChallengeOpponent,
+  challengeAmount,
+  setChallengeAmount,
+  challengeErr,
+  sendChallenge,
+  respondChallenge,
 }) {
-  const pending = challenges.filter(c => c.status === 'pending');
-  const active = challenges.filter(c => c.status === 'active');
-  const settled = challenges.filter(c => c.status === 'settled');
-  const declined = challenges.filter(c => c.status === 'declined');
+  const pending = challenges.filter((c) => c.status === "pending");
+  const active = challenges.filter((c) => c.status === "active");
+  const settled = challenges.filter((c) => c.status === "settled");
+  const declined = challenges.filter((c) => c.status === "declined");
 
-  const pendingReceived = pending.filter(c => c.opponent_name === myName);
-  const pendingSent = pending.filter(c => c.challenger_name === myName);
+  const pendingReceived = pending.filter((c) => c.opponent_name === myName);
+  const pendingSent = pending.filter((c) => c.challenger_name === myName);
 
   return (
     <div className="challenges-panel-inner">
@@ -1782,23 +2057,34 @@ function ChallengesPanel({
       {session && (
         <div className="bet-create">
           <div className="bet-create-label">Send a Challenge</div>
-          <p className="bet-create-desc">Pick an opponent — you&apos;re betting you&apos;ll finish above them</p>
+          <p className="bet-create-desc">
+            Pick an opponent — you&apos;re betting you&apos;ll finish above them
+          </p>
           <select
             value={challengeOpponent}
-            onChange={e => setChallengeOpponent(e.target.value)}
-            style={{ width: '100%', marginBottom: 8 }}
+            onChange={(e) => setChallengeOpponent(e.target.value)}
+            style={{ width: "100%", marginBottom: 8 }}
           >
             <option value="">Select opponent...</option>
-            {(drafters || []).filter(d => d !== myName).map(d => (
-              <option key={d} value={d}>{d}</option>
-            ))}
+            {(drafters || [])
+              .filter((d) => d !== myName)
+              .map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
           </select>
           <div className="bet-create-row">
             <input
               value={challengeAmount}
-              onChange={e => setChallengeAmount(e.target.value)}
+              onChange={(e) => setChallengeAmount(e.target.value)}
               placeholder='Amount (e.g. "$5", "a beer")'
-              onKeyDown={e => e.key === 'Enter' && challengeOpponent && challengeAmount && sendChallenge()}
+              onKeyDown={(e) =>
+                e.key === "Enter" &&
+                challengeOpponent &&
+                challengeAmount &&
+                sendChallenge()
+              }
             />
             <button
               className="btn-sm"
@@ -1808,7 +2094,15 @@ function ChallengesPanel({
               Challenge
             </button>
           </div>
-          {challengeErr && <div className="error" role="alert" style={{ marginTop: 6, fontSize: '0.75rem' }}>{challengeErr}</div>}
+          {challengeErr && (
+            <div
+              className="error"
+              role="alert"
+              style={{ marginTop: 6, fontSize: "0.75rem" }}
+            >
+              {challengeErr}
+            </div>
+          )}
         </div>
       )}
 
@@ -1816,7 +2110,7 @@ function ChallengesPanel({
       {pendingReceived.length > 0 && (
         <>
           <div className="bets-section-header">Incoming Challenges</div>
-          {pendingReceived.map(c => (
+          {pendingReceived.map((c) => (
             <div key={c.id} className="bet-card bet-open">
               <div className="bet-top">
                 <span className="bet-challenger">{c.challenger_name}</span>
@@ -1826,8 +2120,18 @@ function ChallengesPanel({
                 challenges you — they bet they&apos;ll finish above you
               </div>
               <div className="bet-actions">
-                <button className="btn-accept" onClick={() => respondChallenge(c.id, 'accept')}>Accept</button>
-                <button className="btn-cancel" onClick={() => respondChallenge(c.id, 'decline')}>Decline</button>
+                <button
+                  className="btn-accept"
+                  onClick={() => respondChallenge(c.id, "accept")}
+                >
+                  Accept
+                </button>
+                <button
+                  className="btn-cancel"
+                  onClick={() => respondChallenge(c.id, "decline")}
+                >
+                  Decline
+                </button>
               </div>
             </div>
           ))}
@@ -1838,7 +2142,7 @@ function ChallengesPanel({
       {pendingSent.length > 0 && (
         <>
           <div className="bets-section-header">Sent Challenges</div>
-          {pendingSent.map(c => (
+          {pendingSent.map((c) => (
             <div key={c.id} className="bet-card bet-open">
               <div className="bet-top">
                 <span className="bet-challenger">vs {c.opponent_name}</span>
@@ -1846,7 +2150,12 @@ function ChallengesPanel({
               </div>
               <div className="bet-challenge-text">Awaiting response...</div>
               <div className="bet-actions">
-                <button className="btn-cancel" onClick={() => respondChallenge(c.id, 'withdraw')}>Withdraw</button>
+                <button
+                  className="btn-cancel"
+                  onClick={() => respondChallenge(c.id, "withdraw")}
+                >
+                  Withdraw
+                </button>
               </div>
             </div>
           ))}
@@ -1857,13 +2166,20 @@ function ChallengesPanel({
       {declined.length > 0 && (
         <>
           <div className="bets-section-header">Declined</div>
-          {declined.map(c => (
+          {declined.map((c) => (
             <div key={c.id} className="bet-card" style={{ opacity: 0.5 }}>
               <div className="bet-top">
-                <span className="bet-challenger">{c.challenger_name} vs {c.opponent_name}</span>
+                <span className="bet-challenger">
+                  {c.challenger_name} vs {c.opponent_name}
+                </span>
                 <span className="bet-amount">{c.amount}</span>
               </div>
-              <div className="bet-challenge-text" style={{ color: 'var(--cut)' }}>Declined</div>
+              <div
+                className="bet-challenge-text"
+                style={{ color: "var(--cut)" }}
+              >
+                Declined
+              </div>
             </div>
           ))}
         </>
@@ -1873,7 +2189,7 @@ function ChallengesPanel({
       {active.length > 0 && (
         <>
           <div className="bets-section-header">Active</div>
-          {active.map(c => {
+          {active.map((c) => {
             const cp = posMap[c.challenger_name];
             const op = posMap[c.opponent_name];
             const challengerLeading = cp != null && op != null && cp < op;
@@ -1881,12 +2197,16 @@ function ChallengesPanel({
             return (
               <div key={c.id} className="bet-card bet-active">
                 <div className="bet-matchup">
-                  <div className={`bet-player ${challengerLeading ? 'leading' : 'trailing'}`}>
+                  <div
+                    className={`bet-player ${challengerLeading ? "leading" : "trailing"}`}
+                  >
                     <span className="bet-player-name">{c.challenger_name}</span>
                     <span className="bet-player-pos">{posLabel(cp)}</span>
                   </div>
                   <div className="bet-vs">vs</div>
-                  <div className={`bet-player ${opponentLeading ? 'leading' : 'trailing'}`}>
+                  <div
+                    className={`bet-player ${opponentLeading ? "leading" : "trailing"}`}
+                  >
                     <span className="bet-player-name">{c.opponent_name}</span>
                     <span className="bet-player-pos">{posLabel(op)}</span>
                   </div>
@@ -1904,7 +2224,7 @@ function ChallengesPanel({
       {settled.length > 0 && (
         <>
           <div className="bets-section-header">Settled</div>
-          {settled.map(c => {
+          {settled.map((c) => {
             const cp = posMap[c.challenger_name];
             const op = posMap[c.opponent_name];
             const isPush = c.winner_name === null;
@@ -1913,12 +2233,16 @@ function ChallengesPanel({
             return (
               <div key={c.id} className="bet-card bet-settled">
                 <div className="bet-matchup">
-                  <div className={`bet-player ${challengerWon ? 'winner' : opponentWon ? 'loser' : ''}`}>
+                  <div
+                    className={`bet-player ${challengerWon ? "winner" : opponentWon ? "loser" : ""}`}
+                  >
                     <span className="bet-player-name">{c.challenger_name}</span>
                     <span className="bet-player-pos">{posLabel(cp)}</span>
                   </div>
                   <div className="bet-vs">vs</div>
-                  <div className={`bet-player ${opponentWon ? 'winner' : challengerWon ? 'loser' : ''}`}>
+                  <div
+                    className={`bet-player ${opponentWon ? "winner" : challengerWon ? "loser" : ""}`}
+                  >
                     <span className="bet-player-name">{c.opponent_name}</span>
                     <span className="bet-player-pos">{posLabel(op)}</span>
                   </div>
@@ -1926,8 +2250,8 @@ function ChallengesPanel({
                 <div className="bet-amount-row">
                   <span className="bet-amount">{c.amount}</span>
                 </div>
-                <div className={`bet-result ${isPush ? 'push' : 'won'}`}>
-                  {isPush ? 'Push — tie' : `${c.winner_name} wins`}
+                <div className={`bet-result ${isPush ? "push" : "won"}`}>
+                  {isPush ? "Push — tie" : `${c.winner_name} wins`}
                 </div>
               </div>
             );
