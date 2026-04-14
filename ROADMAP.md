@@ -24,9 +24,9 @@ ARIA roles, keyboard access for all interactive elements, color contrast, screen
 
 ---
 
-## Wave 2 — Auth foundation (blocks Waves 3-4)
+## Wave 2 — Auth foundation ✅ COMPLETE
 
-### User authentication (NextAuth.js + Neon)
+### User authentication (NextAuth.js + Neon) ✅
 Per-user accounts with email/password, persistent sessions, server-side identity. Includes optional Venmo handle collection during signup. Foundation for all features that need to know *who* is acting. *(Backlog #1, #10)*
 
 ---
@@ -62,7 +62,7 @@ See [BACKLOG.md — Development Instructions](BACKLOG.md#development-instruction
 | Wave | Items | Notes |
 |------|-------|-------|
 | ~~1~~ | ~~#2, #3, #4, #5, #11, #12~~ | ✅ Complete |
-| 2 | #1 (+#10) | Auth foundation + Venmo handle collection |
+| ~~2~~ | ~~#1 (+#10)~~ | ✅ Complete |
 | 3 | #6 | Tournament history + DB schema |
 | 4 | #7, #8 | Challenges + champion Venmo link, parallel |
 | 5 | #9 | Pull to refresh (polish) |
