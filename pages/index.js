@@ -1294,18 +1294,17 @@ export default function Home() {
                           Select a tournament...
                         </option>
                         {(() => {
-                          const todayStr = new Date()
-                            .toISOString()
-                            .slice(0, 10);
+                          const nowMs = Date.now();
+                          // Dates come back as MongoDB Extended JSON:
+                          // t.date.start.$date.$numberLong (epoch ms string)
+                          const getStartMs = (t) => {
+                            const raw = t?.date?.start?.["$date"]?.["$numberLong"];
+                            return raw != null ? Number(raw) : null;
+                          };
                           const upcoming = schedule.filter((t) => {
-                            if (!t.startDate) return true; // keep if no date info
-                            // startDate may be "YYYY-MM-DD" or "Mon DD, YYYY" — try ISO first
-                            const iso = t.startDate.match(/^\d{4}-\d{2}-\d{2}/)
-                              ? t.startDate.slice(0, 10)
-                              : new Date(t.startDate)
-                                  .toISOString()
-                                  .slice(0, 10);
-                            return iso >= todayStr;
+                            const ms = getStartMs(t);
+                            if (ms == null) return false; // no date → exclude
+                            return ms >= nowMs;
                           });
                           if (!upcoming.length) {
                             return (
@@ -1317,13 +1316,16 @@ export default function Home() {
                           return upcoming.map((t) => {
                             const id = t.tournId || t.id;
                             const name = t.name || t.tournamentName || id;
-                            const dates = t.startDate
-                              ? ` — ${t.startDate}`
+                            const ms = getStartMs(t);
+                            const dateStr = ms
+                              ? new Date(ms).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                })
                               : "";
                             return (
                               <option key={id} value={id}>
-                                {name}
-                                {dates}
+                                {name}{dateStr ? ` — ${dateStr}` : ""}
                               </option>
                             );
                           });
