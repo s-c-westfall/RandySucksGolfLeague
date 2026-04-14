@@ -40,10 +40,10 @@ Archive tournaments on reset to a normalized schema. Browse past results via a d
 
 ## Wave 4 — Features requiring auth + history (parallel)
 
-### Challenges (targeted side bets)
+### Challenges (targeted side bets) ✅
 Challenge a specific opponent to a head-to-head bet. Opponent accepts or declines. Auto-settles from final standings. Requires auth (#1) and tournament history (#6). *(Backlog #7)*
 
-### Champion Venmo pay link
+### Champion Venmo pay link ✅
 Add Venmo deep link to the existing champion banner so losers can pay the winner. Requires `venmo_handle` from auth (#1). *(Backlog #8)*
 
 ---
@@ -64,5 +64,5 @@ See [BACKLOG.md — Development Instructions](BACKLOG.md#development-instruction
 | ~~1~~ | ~~#2, #3, #4, #5, #11, #12~~ | ✅ Complete |
 | ~~2~~ | ~~#1 (+#10)~~ | ✅ Complete |
 | ~~3~~ | ~~#6~~ | ✅ Complete |
-| 4 | #7, #8 | Challenges + champion Venmo link, parallel |
+| ~~4~~ | ~~#7, #8~~ | ✅ Complete |
 | 5 | #9 | Pull to refresh (polish) |

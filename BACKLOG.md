@@ -779,7 +779,7 @@ Currently `buildTeams()` lives in `pages/index.js` (client-side). The archive st
 
 ---
 
-## 7. Challenges (Targeted Side Bets)
+## 7. Challenges (Targeted Side Bets) ✅ COMPLETED
 
 ### Problem
 There's no way for league members to make side wagers with each other during a tournament. Informal bets happen in group chats but aren't tracked, and there's no resolution mechanism. An open marketplace model would allow people in strong positions to cherry-pick easy bets against weaker teams.
@@ -953,7 +953,7 @@ Settlement happens in the `updateScores` action in `pages/api/state.js`:
 
 ---
 
-## 8. Champion Display with Venmo Pay Link
+## 8. Champion Display with Venmo Pay Link ✅ COMPLETED
 
 **Status:** Champion banner is implemented (commit `41c52ad`). The Venmo pay link portion remains — it requires the `venmo_handle` field on the `users` table, which is collected during signup (item #1).
 
