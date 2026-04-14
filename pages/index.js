@@ -418,6 +418,7 @@ export default function Home() {
   const [winnerVenmo, setWinnerVenmo] = useState(null);
 
   // Challenges
+  const [showChallenges, setShowChallenges] = useState(false);
   const [challenges, setChallenges] = useState([]);
   const [challengeOpponent, setChallengeOpponent] = useState('');
   const [challengeAmount, setChallengeAmount] = useState('');
@@ -1283,15 +1284,17 @@ export default function Home() {
               >
                 Scoreboard
               </button>
-              <button
-                className={`tab challenges-tab ${tab === "challenges" ? "active" : ""}`}
-                role="tab"
-                aria-selected={tab === "challenges"}
-                aria-controls="panel-challenges"
-                onClick={() => setTab("challenges")}
-              >
-                Challenges
-              </button>
+              {showChallenges && (
+                <button
+                  className={`tab challenges-tab ${tab === "challenges" ? "active" : ""}`}
+                  role="tab"
+                  aria-selected={tab === "challenges"}
+                  aria-controls="panel-challenges"
+                  onClick={() => setTab("challenges")}
+                >
+                  Challenges
+                </button>
+              )}
             </div>
 
             {/* DRAFT TAB */}
@@ -1558,7 +1561,7 @@ export default function Home() {
                     </div>
 
                     {/* RIGHT: challenges panel (desktop only) */}
-                    <div className="challenges-panel">
+                    {showChallenges && <div className="challenges-panel">
                       <ChallengesPanel
                         challenges={challenges}
                         drafters={s?.drafters || []}
@@ -1574,7 +1577,7 @@ export default function Home() {
                         sendChallenge={sendChallenge}
                         respondChallenge={respondChallenge}
                       />
-                    </div>
+                    </div>}
                   </div>
                 )}
 
@@ -1582,6 +1585,19 @@ export default function Home() {
                 {isCreator && (
                   <div className="panel" style={{ marginTop: 16 }}>
                     <h3>Commissioner</h3>
+
+                    <div className="field" style={{ marginBottom: 12 }}>
+                      <label>Challenges</label>
+                      <button
+                        className="btn-ghost"
+                        onClick={() => {
+                          setShowChallenges(v => !v);
+                          if (tab === "challenges") setTab("scores");
+                        }}
+                      >
+                        {showChallenges ? "Hide Challenges Panel" : "Show Challenges Panel"}
+                      </button>
+                    </div>
 
                     <div className="field" style={{ marginBottom: 12 }}>
                       <label>Add Drafter</label>
@@ -1678,7 +1694,7 @@ export default function Home() {
             )}
 
             {/* CHALLENGES TAB (mobile only) */}
-            {tab === "challenges" && (
+            {tab === "challenges" && showChallenges && (
               <div role="tabpanel" id="panel-challenges">
                 <ChallengesPanel
                   challenges={challenges}

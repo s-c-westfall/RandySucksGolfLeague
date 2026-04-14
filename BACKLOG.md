@@ -1173,6 +1173,40 @@ Wrap the touch event attachment in a media query check or use CSS to hide the in
 
 ---
 
+## 13. Refine Challenges Send/Receive Flow
+
+### Problem
+The challenges panel (item #7) is functional but the UX for sending and responding to challenges needs refinement before it's ready for league-wide use. The current flow is minimal — a dropdown + text input — and the notifications/discoverability model (users must manually check the panel to see incoming challenges) may lead to missed challenges. The panel is currently **hidden behind a commissioner toggle** until this work is complete.
+
+### Goals
+- Make the send flow feel intentional and clear (not accidental)
+- Make incoming challenges obvious — users shouldn't miss them
+- Tighten the copy and interaction model based on real usage feedback
+- Consider whether a notification badge or indicator is needed on the tab/panel
+
+### Areas to Refine
+- **Send flow:** Review the opponent dropdown + amount input UX. Consider a two-step flow (select opponent → confirm with amount) or inline confirmation.
+- **Incoming challenges:** Currently buried in the panel — consider a badge on the Challenges tab showing pending count, or a banner notification above the scoreboard.
+- **Copy:** "challenges you — they bet they'll finish above you" is wordy. Simplify.
+- **Declined state:** Declined challenges clutter the panel — should they auto-hide after a short delay or be collapsible?
+- **Amount field:** Free-text is flexible but may lead to ambiguous entries. Consider suggestions ("$5", "$10", "a beer") as placeholder chips.
+- **Empty state:** "No challenges yet. Send one above!" is fine for MVP but could be more engaging.
+- **Mobile tab badge:** Show a count badge on the Challenges tab when there are pending challenges awaiting response.
+
+### Commissioner Toggle
+The challenges panel is gated by a **Show/Hide Challenges Panel** toggle in the Commissioner panel (Scoreboard tab → Commissioner section). This allows the commissioner to enable the feature for the league once the flow is refined.
+
+### Dependencies
+- Hard dependency on item #7 (challenges) — already shipped
+- Hard dependency on item #1 (auth) — already shipped
+
+### Files to Touch
+- `pages/index.js` — challenge send/receive UI, tab badge, notification UX
+- `styles/globals.css` — updated challenge panel styles
+- Potentially `pages/api/challenges.js` — if flow changes require API adjustments
+
+---
+
 ## 10. Collect Venmo Handle on Sign Up
 **Status:** Folded into item #1. The `venmo_handle` column is included in the `users` table schema, and the registration form includes an optional Venmo handle field. This item is complete when #1 ships.
 
