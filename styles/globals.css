@@ -234,6 +234,7 @@ input::placeholder { color: var(--text-light); }
   transition: background 0.15s;
 }
 .result-item:hover { background: rgba(201,168,76,0.12); }
+.result-item.highlighted { background: rgba(201,168,76,0.12); border-left-color: var(--gold); }
 .result-item.drafted { opacity: 0.35; cursor: not-allowed; }
 .result-item.drafted:hover { background: none; }
 .muted {

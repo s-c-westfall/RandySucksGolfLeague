@@ -114,6 +114,9 @@ export default function Home() {
   const [assignDrafter, setAssignDrafter] = useState("");
   const [assignSearch, setAssignSearch] = useState("");
 
+  const [highlightIndex, setHighlightIndex] = useState(-1);
+  const resultsRef = useRef(null);
+
   const pollingRef = useRef(null);
   const refreshRef = useRef(null);
 
@@ -419,6 +422,16 @@ export default function Home() {
       setS(await stateGet());
       setTab("draft");
     });
+
+  // scroll highlighted result into view
+  useEffect(() => {
+    if (highlightIndex >= 0 && resultsRef.current) {
+      const items = resultsRef.current.querySelectorAll('.result-item');
+      if (items[highlightIndex]) {
+        items[highlightIndex].scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [highlightIndex]);
 
   // ── derived ──
   const drafted = new Set((s?.picks || []).map((p) => p.playerId));
@@ -782,15 +795,39 @@ export default function Home() {
                     <div className="row-gap" style={{ marginBottom: 10 }}>
                       <input
                         value={searchQ}
-                        onChange={(e) => setSearchQ(e.target.value)}
+                        onChange={(e) => { setSearchQ(e.target.value); setHighlightIndex(-1); }}
                         placeholder="Search player..."
+                        onKeyDown={(e) => {
+                          if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            setHighlightIndex(prev => {
+                              let next = prev + 1;
+                              while (next < filteredField.length && drafted.has(filteredField[next].playerId)) next++;
+                              return next < filteredField.length ? next : prev;
+                            });
+                          } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            setHighlightIndex(prev => {
+                              let next = prev - 1;
+                              while (next >= 0 && drafted.has(filteredField[next].playerId)) next--;
+                              return next >= 0 ? next : prev;
+                            });
+                          } else if (e.key === 'Enter') {
+                            if (highlightIndex >= 0 && highlightIndex < filteredField.length) {
+                              const p = filteredField[highlightIndex];
+                              if (!drafted.has(p.playerId)) makePick(p.playerId, p.name);
+                            }
+                          } else if (e.key === 'Escape') {
+                            setHighlightIndex(-1);
+                          }
+                        }}
                       />
                     </div>
-                    <div className="results">
-                      {filteredField.map((p) => (
+                    <div className="results" ref={resultsRef}>
+                      {filteredField.map((p, i) => (
                         <div
                           key={p.playerId}
-                          className={`result-item ${drafted.has(p.playerId) ? "drafted" : ""}`}
+                          className={`result-item ${drafted.has(p.playerId) ? "drafted" : ""} ${i === highlightIndex ? "highlighted" : ""}`}
                           onClick={() =>
                             !drafted.has(p.playerId) &&
                             makePick(p.playerId, p.name)
