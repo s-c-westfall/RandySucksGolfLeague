@@ -184,7 +184,7 @@ function AuthScreen() {
   return (
     <>
       <Head>
-        <title>Sign In — Golf League</title>
+        <title>Sign In — Randy's A Hack</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap"
@@ -960,10 +960,10 @@ export default function Home() {
       <div role="status" aria-live="polite" className="sr-only">{liveMsg}</div>
       <Head>
         <title>
-          {!s?.configured ? 'Setup — Golf League'
-            : inLobby ? 'Lobby — Golf League'
-            : inDraft ? 'Draft — Golf League'
-            : 'Scoreboard — Golf League'}
+          {!s?.configured ? "Setup — Randy's A Hack"
+            : inLobby ? "Lobby — Randy's A Hack"
+            : inDraft ? "Draft — Randy's A Hack"
+            : "Scoreboard — Randy's A Hack"}
         </title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -978,7 +978,7 @@ export default function Home() {
             <span className="tourn-name">
               {viewingTournament && historyData
                 ? `${historyData.tournament.name} — ${historyData.tournament.year}`
-                : s?.tournamentName || "Golf League"}
+                : s?.tournamentName || "Randy's A Hack"}
             </span>
             <span className="tourn-chevron">{tournDropdownOpen ? "▲" : "▼"}</span>
           </button>
@@ -1148,17 +1148,35 @@ export default function Home() {
                     <option value="" disabled>
                       Select a tournament...
                     </option>
-                    {schedule.map((t) => {
-                      const id = t.tournId || t.id;
-                      const name = t.name || t.tournamentName || id;
-                      const dates = t.startDate ? ` — ${t.startDate}` : "";
-                      return (
-                        <option key={id} value={id}>
-                          {name}
-                          {dates}
-                        </option>
-                      );
-                    })}
+                    {(() => {
+                      const todayStr = new Date().toISOString().slice(0, 10);
+                      const upcoming = schedule.filter((t) => {
+                        if (!t.startDate) return true; // keep if no date info
+                        // startDate may be "YYYY-MM-DD" or "Mon DD, YYYY" — try ISO first
+                        const iso = t.startDate.match(/^\d{4}-\d{2}-\d{2}/)
+                          ? t.startDate.slice(0, 10)
+                          : new Date(t.startDate).toISOString().slice(0, 10);
+                        return iso >= todayStr;
+                      });
+                      if (!upcoming.length) {
+                        return (
+                          <option value="" disabled>
+                            No upcoming tournaments found
+                          </option>
+                        );
+                      }
+                      return upcoming.map((t) => {
+                        const id = t.tournId || t.id;
+                        const name = t.name || t.tournamentName || id;
+                        const dates = t.startDate ? ` — ${t.startDate}` : "";
+                        return (
+                          <option key={id} value={id}>
+                            {name}
+                            {dates}
+                          </option>
+                        );
+                      });
+                    })()}
                   </select>
                 </div>
 
