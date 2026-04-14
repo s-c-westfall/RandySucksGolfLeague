@@ -2,24 +2,24 @@
 
 Items are fully spec'd in [BACKLOG.md](BACKLOG.md) with acceptance criteria, visual mockups, and implementation details.
 
-## Wave 1 — UI improvements (no backend dependencies, parallel)
+## Wave 1 — UI improvements ✅ COMPLETE
 
-### Draft table — 4-column layout with snake order
+### Draft table — 4-column layout with snake order ✅
 Participant | Rd 1 | Rd 2 | Rd 3 columns; snake fill order visualized as picks are made. *(Backlog #2)*
 
-### Last pick display
+### Last pick display ✅
 Inline banner above the draft board showing the most recently drafted golfer and who picked them. *(Backlog #3)*
 
-### Keyboard navigation for golfer selection
+### Keyboard navigation for golfer selection ✅
 Arrow keys to navigate the search results, Enter to confirm. Standard autocomplete behavior. *(Backlog #4)*
 
-### Leaderboard position movement indicators
+### Leaderboard position movement indicators ✅
 Green ▲ / red ▼ arrows with delta next to position number, plus colored left-edge pip on each team card. *(Backlog #5)*
 
-### Right-align header buttons
+### Right-align header buttons ✅
 Fix header layout wrapping on narrow viewports. *(Backlog #11)*
 
-### Accessibility fixes
+### Accessibility fixes ✅
 ARIA roles, keyboard access for all interactive elements, color contrast, screen reader support. *(Backlog #12)*
 
 ---
@@ -61,7 +61,7 @@ See [BACKLOG.md — Development Instructions](BACKLOG.md#development-instruction
 
 | Wave | Items | Notes |
 |------|-------|-------|
-| 1 | #2, #3, #4, #5, #11, #12 | UI-only, parallel in worktrees |
+| ~~1~~ | ~~#2, #3, #4, #5, #11, #12~~ | ✅ Complete |
 | 2 | #1 (+#10) | Auth foundation + Venmo handle collection |
 | 3 | #6 | Tournament history + DB schema |
 | 4 | #7, #8 | Challenges + champion Venmo link, parallel |

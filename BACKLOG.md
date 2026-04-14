@@ -288,7 +288,7 @@ This item introduces the first real table (`users`) and marks the beginning of a
 
 ---
 
-## 2. Draft Table — 4-Column Layout with Snake Order
+## 2. Draft Table — 4-Column Layout with Snake Order ✅ COMPLETED
 
 ### Problem
 The current draft board (`pages/index.js:804-826`) is a flat vertical list of all picks in sequential order. Each row shows `#pickNum | drafterName | golferName | roundNum`. This makes it hard to see:
@@ -387,7 +387,7 @@ This replaces the flat `.map()` at `pages/index.js:806-825`.
 
 ---
 
-## 3. Last Pick Display
+## 3. Last Pick Display ✅ COMPLETED
 
 ### Problem
 During the draft, there's no persistent indicator of what just happened. After a pick is made, the board updates and the turn moves on, but users who weren't watching at that exact moment have no quick way to see the most recent pick without scanning the draft table. This is especially important since the app uses 2-minute polling — a user returning to the tab needs to immediately see what changed.
@@ -465,7 +465,7 @@ See `public/mockup-lastpick.html` (Option A) for a live reference mockup.
 
 ---
 
-## 4. Keyboard Navigation for Golfer Selection
+## 4. Keyboard Navigation for Golfer Selection ✅ COMPLETED
 
 ### Problem
 The golfer search dropdown (`pages/index.js:768-785`) only supports mouse clicks to select a golfer. Users type a name, see filtered results, but must move their hand to the mouse/trackpad to click. There's no way to arrow through the list or press Enter to confirm.
@@ -526,7 +526,7 @@ The results are plain `<div>` elements with `onClick` — no `role`, no `aria-*`
 
 ---
 
-## 5. Leaderboard Position Movement Indicators
+## 5. Leaderboard Position Movement Indicators ✅ COMPLETED
 
 ### Problem
 The scoreboard shows current standings but gives no sense of momentum — who's climbing, who's falling. Users have to remember previous positions to know if anything changed between refreshes.
@@ -1180,7 +1180,7 @@ See `public/mockup-signup.html` for the registration form mockup with the Venmo 
 
 ---
 
-## 11. Right-Align Header Buttons
+## 11. Right-Align Header Buttons ✅ COMPLETED
 
 ### Problem
 The `.header-right` container (`pages/index.js:522-545`, `styles/globals.css:46`) uses `display: flex; flex-wrap: wrap; gap: 10px;` which causes the badges and buttons to wrap to a second line on narrow viewports (~375-500px). When wrapped, the items left-align under the tournament name, creating a ragged, unfinished look. The header height jumps unpredictably, and the Reset button can end up directly under the logo, visually disconnected from its group.
@@ -1277,7 +1277,7 @@ Mobile (375px) — CURRENT (broken):
 
 ---
 
-## 12. Accessibility Fixes
+## 12. Accessibility Fixes ✅ COMPLETED
 
 ### Problem
 The app has significant accessibility gaps that prevent screen reader users, keyboard-only users, and colorblind users from using it effectively.
