@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signup / Login Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-deep: #1a2e1a;
+      --green-mid: #2d4a2d;
+      --gold: #c9a84c;
+      --gold-light: #e8c97a;
+      --cream: #f5f0e8;
+      --cream-dark: #e8e0d0;
+      --text-light: #8a8a7a;
+      --cut: #c0392b;
+      --radius: 4px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--green-deep);
+      color: var(--cream);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(61,100,61,0.3) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(40,70,40,0.2) 0%, transparent 50%);
+    }
+    header {
+      border-bottom: 1px solid rgba(201,168,76,0.3);
+      padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,0,0,0.2); backdrop-filter: blur(8px);
+      position: sticky; top: 0; z-index: 100; gap: 12px;
+    }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--gold); }
+
+    /* ═══════ AUTH CONTAINER ═══════ */
+    .auth-container {
+      max-width: 400px;
+      margin: 80px auto 0;
+      padding: 0 24px;
+      animation: fadeUp 0.4s ease-out;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .auth-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(201,168,76,0.25);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .auth-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    .auth-icon {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+    }
+    .auth-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: var(--gold-light);
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    .auth-subtitle {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-light);
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    /* ═══════ FORM ELEMENTS ═══════ */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-light);
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius);
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus {
+      border-color: var(--gold);
+    }
+    .form-input::placeholder {
+      color: rgba(138,138,122,0.5);
+    }
+    .form-hint {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--text-light);
+      margin-top: 4px;
+      opacity: 0.7;
+    }
+    .section-heading {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--gold);
+      margin-top: 12px;
+      margin-bottom: 14px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      background: var(--gold);
+      color: var(--green-deep);
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 8px;
+    }
+    .btn-primary:hover { background: var(--gold-light); }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 24px 0;
+    }
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+    }
+    .auth-divider span {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-light);
+    }
+
+    .auth-switch {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .auth-switch span {
+      font-size: 0.82rem;
+      color: var(--text-light);
+    }
+    .auth-switch a {
+      color: var(--gold);
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .auth-switch a:hover { color: var(--gold-light); }
+
+    /* ═══════ ERROR / SUCCESS STATES ═══════ */
+    .error-msg {
+      background: rgba(192,57,43,0.12);
+      border: 1px solid rgba(192,57,43,0.3);
+      color: #e8a0a0;
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      font-size: 0.78rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .error-msg.show { display: block; }
+
+    .success-msg {
+      background: rgba(92,184,92,0.12);
+      border: 1px solid rgba(92,184,92,0.3);
+      color: #a8d8a8;
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      font-size: 0.78rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .success-msg.show { display: block; }
+
+    /* ═══════ LOGGED-IN HEADER ═══════ */
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 10px;
+      border-radius: 2px;
+    }
+    .badge.user {
+      color: var(--cream);
+      background: rgba(201,168,76,0.15);
+      border: 1px solid rgba(201,168,76,0.3);
+    }
+    .badge.commissioner {
+      color: var(--gold);
+      background: rgba(201,168,76,0.1);
+      border: 1px solid rgba(201,168,76,0.3);
+      font-size: 0.55rem;
+    }
+    .btn-logout {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-light);
+      background: none;
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 4px 10px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-logout:hover {
+      color: var(--cream);
+      border-color: rgba(255,255,255,0.25);
+    }
+
+    /* ═══════ PASSWORD STRENGTH ═══════ */
+    .password-strength {
+      display: flex;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .strength-bar {
+      flex: 1;
+      height: 3px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      transition: background 0.3s;
+    }
+    .strength-bar.weak { background: var(--cut); }
+    .strength-bar.medium { background: var(--gold); }
+    .strength-bar.strong { background: #5cb85c; }
+
+    /* ═══════ VIEW TOGGLE ═══════ */
+    .hidden { display: none !important; }
+    .view-toggle {
+      position: fixed; bottom: 20px; right: 20px; z-index: 200;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .view-toggle button {
+      background: var(--gold); color: var(--green-deep); border: none;
+      padding: 8px 16px; border-radius: var(--radius); cursor: pointer;
+      font-family: 'DM Mono', monospace; font-size: 0.62rem; text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .view-toggle button:hover { background: var(--gold-light); }
+    .view-toggle button.active-view {
+      background: var(--green-mid);
+      color: var(--gold);
+      border: 1px solid var(--gold);
+    }
+
+    /* ═══════ SPEC NOTES ═══════ */
+    .spec-notes {
+      max-width: 600px;
+      margin: 48px auto 0;
+      padding: 0 24px 60px;
+    }
+    .spec-notes h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      color: var(--gold);
+      margin-bottom: 12px;
+      margin-top: 28px;
+    }
+    .spec-notes h3:first-child { margin-top: 0; }
+    .spec-notes ul {
+      list-style: none;
+      padding: 0;
+    }
+    .spec-notes li {
+      font-size: 0.78rem;
+      color: var(--cream-dark);
+      padding: 4px 0;
+      padding-left: 16px;
+      position: relative;
+    }
+    .spec-notes li::before {
+      content: '>';
+      position: absolute;
+      left: 0;
+      color: var(--gold);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+    }
+    .spec-notes .note {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--text-light);
+      margin-top: 4px;
+      padding-left: 16px;
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 12px 16px; }
+      .auth-container { margin-top: 48px; }
+      .auth-card { padding: 28px 20px; }
+      .auth-title { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ════════ VIEW 1: LOGIN ════════ -->
+  <div id="view-login">
+    <header>
+      <div class="logo">Randy Sucks Golf League</div>
+    </header>
+
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="auth-title">Welcome Back</div>
+        <div class="auth-subtitle">Sign in to your account</div>
+
+        <div class="error-msg" id="login-error">Invalid email or password.</div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" placeholder="you@example.com" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" placeholder="Enter your password" />
+        </div>
+
+        <button class="btn-primary">Sign In</button>
+
+        <div class="auth-switch">
+          <span>No account? </span>
+          <a onclick="show('view-register')">Create one</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ VIEW 2: REGISTER ════════ -->
+  <div id="view-register" class="hidden">
+    <header>
+      <div class="logo">Randy Sucks Golf League</div>
+    </header>
+
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="auth-title">Join the League</div>
+        <div class="auth-subtitle">Create your account</div>
+
+        <div class="error-msg" id="register-error">That email is already registered.</div>
+
+        <div class="form-group">
+          <label class="form-label">Display Name</label>
+          <input class="form-input" type="text" placeholder="How you'll appear in drafts" />
+          <div class="form-hint">This is the name shown on the draft board and scoreboard</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" placeholder="you@example.com" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" placeholder="Minimum 8 characters" id="reg-password" oninput="updateStrength(this.value)" />
+          <div class="password-strength">
+            <div class="strength-bar" id="str1"></div>
+            <div class="strength-bar" id="str2"></div>
+            <div class="strength-bar" id="str3"></div>
+            <div class="strength-bar" id="str4"></div>
+          </div>
+        </div>
+
+        <div class="section-heading">Get Paid</div>
+
+        <div class="form-group">
+          <label class="form-label">Venmo Username</label>
+          <input class="form-input" type="text" placeholder="@your-venmo (optional)" />
+          <div class="form-hint">Win the league and we'll link your Venmo so losers can pay up</div>
+        </div>
+
+        <button class="btn-primary">Create Account</button>
+
+        <div class="auth-switch">
+          <span>Already have an account? </span>
+          <a onclick="show('view-login')">Sign in</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ VIEW 3: REGISTER SUCCESS ════════ -->
+  <div id="view-success" class="hidden">
+    <header>
+      <div class="logo">Randy Sucks Golf League</div>
+    </header>
+
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="auth-icon">&#9971;</div>
+        <div class="auth-title">You're In</div>
+        <div class="auth-subtitle">Account created successfully</div>
+
+        <div class="success-msg show">
+          Welcome to the league, Steve! You can now sign in with your email and password.
+        </div>
+
+        <button class="btn-primary" onclick="show('view-login')">Sign In</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ VIEW 4: LOGGED-IN HEADER ════════ -->
+  <div id="view-logged-in" class="hidden">
+    <header>
+      <div class="logo">Randy Sucks Golf League</div>
+      <div class="header-right">
+        <span class="badge user">Steve</span>
+        <button class="btn-logout">Log Out</button>
+      </div>
+    </header>
+
+    <div class="auth-container" style="text-align:center; margin-top:120px;">
+      <div class="auth-subtitle" style="margin-bottom:8px;">Logged in as Steve</div>
+      <p style="color:var(--text-light); font-size:0.82rem;">
+        This is what the header looks like when a user is authenticated.<br/>
+        The app content (setup / lobby / draft / scoreboard) renders below.
+      </p>
+    </div>
+  </div>
+
+  <!-- ════════ VIEW 5: LOGIN WITH ERROR ════════ -->
+  <div id="view-login-error" class="hidden">
+    <!-- login error view -->
+    <header>
+      <div class="logo">Randy Sucks Golf League</div>
+    </header>
+
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="auth-title">Welcome Back</div>
+        <div class="auth-subtitle">Sign in to your account</div>
+
+        <div class="error-msg show">Invalid email or password.</div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" value="steve@example.com" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" value="wrongpass" />
+        </div>
+
+        <button class="btn-primary">Sign In</button>
+
+        <div class="auth-switch">
+          <span>No account? </span>
+          <a onclick="show('view-register')">Create one</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ VIEW 7: REGISTER WITH ERROR ════════ -->
+  <div id="view-register-error" class="hidden">
+    <header>
+      <div class="logo">Randy Sucks Golf League</div>
+    </header>
+
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="auth-title">Join the League</div>
+        <div class="auth-subtitle">Create your account</div>
+
+        <div class="error-msg show">That email is already registered.</div>
+
+        <div class="form-group">
+          <label class="form-label">Display Name</label>
+          <input class="form-input" type="text" value="Steve" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" value="steve@example.com" style="border-color: var(--cut);" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" value="12345678" />
+          <div class="password-strength">
+            <div class="strength-bar weak"></div>
+            <div class="strength-bar weak"></div>
+            <div class="strength-bar"></div>
+            <div class="strength-bar"></div>
+          </div>
+        </div>
+
+        <div class="section-heading">Get Paid</div>
+
+        <div class="form-group">
+          <label class="form-label">Venmo Username</label>
+          <input class="form-input" type="text" placeholder="@your-venmo (optional)" />
+          <div class="form-hint">Win the league and we'll link your Venmo so losers can pay up</div>
+        </div>
+
+        <button class="btn-primary">Create Account</button>
+
+        <div class="auth-switch">
+          <span>Already have an account? </span>
+          <a onclick="show('view-login')">Sign in</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ SPEC NOTES ════════ -->
+  <div class="spec-notes">
+    <h3>Signup Flow</h3>
+    <ul>
+      <li>Unauthenticated users see the login screen on every page load</li>
+      <li>Login form: email + password, submits via NextAuth <code>signIn("credentials")</code></li>
+      <li>"Create one" link toggles to the registration form (no page navigation)</li>
+      <li>Registration: display name, email, password, optional Venmo handle</li>
+      <li>On success, redirect to login with a success banner (no auto-login)</li>
+      <li>On error, inline error message (duplicate email, wrong invite code, weak password)</li>
+    </ul>
+
+    <h3>Session Behavior</h3>
+    <ul>
+      <li>Sessions use NextAuth JWT strategy &mdash; persists across refresh, tabs, browser restart</li>
+      <li>Session max age: 7 days</li>
+      <li>Logged-in user's display name shown as a badge in the header</li>
+      <li>"Log Out" button calls <code>signOut()</code> and returns to login screen</li>
+    </ul>
+
+    <h3>Validation Rules</h3>
+    <ul>
+      <li>Email: must be unique, valid format</li>
+      <li>Password: minimum 8 characters</li>
+      <li>Display name: required, non-empty</li>
+      <li>All validation errors shown inline above the form</li>
+    </ul>
+
+    <h3>Server-side Changes</h3>
+    <ul>
+      <li>New <code>users</code> table: id, name, email, password_hash, venmo_handle, is_commissioner, created_at</li>
+      <li>New <code>POST /api/register</code> endpoint (hashes password with bcryptjs, stores optional Venmo handle)</li>
+      <li>New <code>pages/api/auth/[...nextauth].js</code> (credentials provider + JWT)</li>
+      <li>All API mutations switch from <code>x-league-secret</code> header to <code>getServerSession()</code></li>
+      <li>Delete old <code>pages/api/auth.js</code>, remove <code>LEAGUE_SECRET</code> / <code>COMMISSIONER_NAME</code> env vars</li>
+    </ul>
+
+    <h3>Identity Changes in Client</h3>
+    <ul>
+      <li>Remove <code>getSecret()</code>, <code>getMyName()</code>, <code>saveMyName()</code>, <code>clearMyName()</code></li>
+      <li>Remove <code>sessionStorage</code> / <code>localStorage</code> identity code</li>
+      <li>Replace with <code>useSession()</code> from <code>next-auth/react</code></li>
+      <li>Draft join uses authenticated user's name automatically (no self-reported input)</li>
+      <li>Wrap <code>_app.js</code> with <code>&lt;SessionProvider&gt;</code></li>
+    </ul>
+
+    <h3>Security</h3>
+    <ul>
+      <li>Passwords hashed with bcryptjs cost factor 12</li>
+      <li><code>NEXTAUTH_SECRET</code> generated with <code>openssl rand -base64 32</code></li>
+      <li>All DB writes use parameterized <code>sql</code> tagged template (no string concatenation)</li>
+      <li>Registration validates CSRF token from NextAuth cookie</li>
+      <li>No email verification (trusted friends league ~12 users)</li>
+      <li>No password reset (commissioner can reset via Neon console)</li>
+    </ul>
+
+    <h3>New Env Vars</h3>
+    <ul>
+      <li><code>NEXTAUTH_SECRET</code> &mdash; JWT signing key</li>
+      <li><code>NEXTAUTH_URL</code> &mdash; canonical app URL</li>
+    </ul>
+    <p class="note">Remove: LEAGUE_SECRET, COMMISSIONER_NAME</p>
+
+    <h3>Migration</h3>
+    <ul>
+      <li>First deploy: users table empty, commissioner registers first</li>
+      <li>Commissioner manually sets <code>is_commissioner = true</code> via Neon console (or seed script)</li>
+      <li>Existing league_state JSONB unaffected &mdash; app resets each tournament</li>
+      <li>Drafter list stays as name strings in state, but also stores userId for future relational queries</li>
+    </ul>
+  </div>
+
+  <!-- ═══════ VIEW TOGGLE ═══════ -->
+  <div class="view-toggle">
+    <button onclick="show('view-login')" class="active-view">Login</button>
+    <button onclick="show('view-register')">Register</button>
+    <button onclick="show('view-success')">Success</button>
+    <button onclick="show('view-logged-in')">Logged In</button>
+    <button onclick="show('view-login-error')">Login Error</button>
+    <button onclick="show('view-register-error')">Register Error</button>
+  </div>
+
+  <script>
+    function show(id) {
+      document.querySelectorAll('[id^="view-"]').forEach(v => v.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+      document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active-view'));
+      event.target.classList.add('active-view');
+      window.scrollTo(0, 0);
+    }
+
+    function updateStrength(val) {
+      const bars = [
+        document.getElementById('str1'),
+        document.getElementById('str2'),
+        document.getElementById('str3'),
+        document.getElementById('str4')
+      ];
+      bars.forEach(b => b.className = 'strength-bar');
+
+      if (val.length === 0) return;
+
+      let score = 0;
+      if (val.length >= 8) score++;
+      if (val.length >= 12) score++;
+      if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
+      if (/\d/.test(val) || /[^a-zA-Z0-9]/.test(val)) score++;
+
+      const cls = score <= 1 ? 'weak' : score <= 2 ? 'medium' : 'strong';
+      for (let i = 0; i < score; i++) {
+        bars[i].classList.add(cls);
+      }
+    }
+  </script>
+</body>
+</html>

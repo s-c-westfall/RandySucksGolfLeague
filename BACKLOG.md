@@ -7,20 +7,101 @@ Use subagents (worktree isolation) to develop independent items in parallel. Eac
 
 **Items that can be developed in parallel (no dependencies between them):**
 - Items #2, #3, #4 (UI-only changes to `pages/index.js` + `styles/globals.css`) — these touch different sections of the file and can be developed together, but review for merge conflicts in `index.js` since they all modify it
-- Item #5 (leaderboard movement) is independent of #2–#4 but also touches `index.js` rendering
+- Items #5, #11, #12 are also UI-only and independent of #2–#4 (though #5 has a small API change for `previousRankings`)
 
 **Items that must be sequential:**
-- Item #1 (auth) must ship first — items #6, #7, #8 depend on the `users` table
+- Item #1 (auth) must ship first — items #7, #8 depend on the `users` table
 - Item #6 (tournament history) should ship before #7 (challenges) for the `tournament_id` foreign key
-- Item #10 (Venmo handle on sign up) should ship with or after #1
+- Item #10 (Venmo handle on sign up) is folded into #1
 
 **Recommended development order:**
-1. **Wave 1 (parallel):** Items #2, #3, #4 — pure UI, no backend changes
-2. **Wave 2:** Item #1 — auth foundation (blocks everything below)
-3. **Wave 3 (parallel):** Items #5, #11 — independent UI/backend tweaks
-4. **Wave 4:** Item #6 — tournament history + DB schema expansion
-5. **Wave 5 (parallel):** Items #7, #8, #10 — challenges, champion display, Venmo on sign up
-6. **Wave 6:** Item #9 — pull to refresh (polish)
+1. **Wave 1 (parallel):** Items #2, #3, #4, #5, #11, #12 — UI-only, no auth dependency
+2. **Wave 2:** Item #1 — auth foundation + Venmo handle collection (blocks #7, #8)
+3. **Wave 3:** Item #6 — tournament history + DB schema expansion
+4. **Wave 4 (parallel):** Items #7, #8 — challenges (needs auth + history), champion Venmo link (needs auth)
+5. **Wave 5:** Item #9 — pull to refresh (polish)
+
+### Worktree Workflow
+
+Each subagent develops in an isolated git worktree branched from `main`. This allows parallel development without conflicts during implementation.
+
+**Creating a worktree:**
+```bash
+# From the repo root
+git worktree add .claude/worktrees/item-N -b feature/item-N-short-description
+cd .claude/worktrees/item-N
+```
+
+**Branch naming convention:** `feature/item-N-short-description` (e.g., `feature/item-2-draft-table`, `feature/item-12-accessibility`)
+
+**During development:**
+- Each subagent works only in its worktree — never modifies main directly
+- Commit frequently with descriptive messages
+- Use the preview server (`npm run dev`) within the worktree to verify visually
+
+**When done:**
+- Subagent commits all changes and reports completion
+- The worktree branch is ready for merge review
+
+### Merge Strategy
+
+**Within a wave (parallel items):** Merge items one at a time into `main`. After each merge, rebase remaining branches onto the updated `main` before merging the next.
+
+**Merge order for Wave 1:** Items touching fewer lines of `index.js` should merge first to minimize conflict resolution. Suggested order:
+1. #11 (header CSS, tiny HTML change) — smallest diff
+2. #12 (accessibility — ARIA attrs, CSS) — additive, low conflict risk
+3. #4 (keyboard nav — adds state + handler to existing search block)
+4. #3 (last pick — adds a new render block between existing sections)
+5. #5 (leaderboard movement — modifies scoreboard rendering + API)
+6. #2 (draft table — replaces the entire pick-list rendering block)
+
+**Conflict resolution:** Since Wave 1 items all touch `pages/index.js` and `styles/globals.css`, expect merge conflicts. After merging item N:
+```bash
+git checkout feature/item-M
+git rebase main
+# Resolve conflicts, test, then continue
+```
+
+**Merge type:** Use standard merge commits (not squash) so the full commit history is preserved for debugging.
+
+### Stress Testing Process
+
+After each item is developed, the subagent must stress test before reporting completion. **A feature is not done until stress testing passes.**
+
+**Testing workflow:**
+1. Start the preview server in the worktree
+2. Run through every test scenario listed in the item's "Testing Notes" section
+3. Take screenshots at mobile (375px), tablet (768px), and desktop (1280px) viewports for UI items
+4. For API changes, test with valid inputs, invalid inputs, and edge cases
+5. Verify no regressions in existing features (the app still loads, draft still works, scoreboard still renders)
+
+**Reporting:** When a subagent reports completion, it must include:
+- Which test scenarios passed
+- Screenshots at each viewport (for UI items)
+- Any edge cases discovered and how they were handled
+- Confirmation that existing features still work
+
+### Pre-Merge Checklist
+
+Before merging any item into `main`:
+- [ ] All acceptance criteria from the item's spec are met
+- [ ] All test scenarios from "Testing Notes" pass
+- [ ] No console errors or warnings in the browser
+- [ ] Mobile, tablet, and desktop viewports render correctly (UI items)
+- [ ] The app loads from scratch (clear localStorage/sessionStorage, reload)
+- [ ] Existing features still work (pick a golfer, view scoreboard, refresh scores)
+- [ ] No hardcoded test data left in the code
+- [ ] CSS changes don't break other sections (check all app phases: setup, lobby, draft, scoreboard)
+
+### Deploy Strategy
+
+**Per-wave deployment:**
+- After all items in a wave are merged to `main` and integration tested, deploy to Vercel
+- Verify the production deploy matches local testing
+- For backend items (#1, #5, #6, #7): verify database migrations run cleanly on first request (`ensureTable()` pattern)
+- For auth (#1): manually verify registration, login, session persistence, and logout on production
+
+**Rollback:** If a deploy breaks production, revert the merge commit and redeploy. Each wave should be a stable, deployable unit.
 
 ### Stress Testing
 After each item is developed, stress test the feature before merging:
@@ -94,6 +175,7 @@ Replace both systems with a single NextAuth.js credentials flow backed by a Neon
 - [ ] Draft picks are attributed to the authenticated user's `name`, not a client-supplied string
 - [ ] A "Log out" button is visible when logged in
 - [ ] A simple registration flow exists so league members can create accounts (can be a basic form — no email verification required)
+- [ ] Registration includes an optional Venmo handle field, stored in `users.venmo_handle`
 - [ ] The `LEAGUE_SECRET` env var and `sessionStorage`/`localStorage` identity code are fully removed
 
 ### Suggested Approach
@@ -106,6 +188,7 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
+  venmo_handle TEXT,
   is_commissioner BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -129,8 +212,7 @@ Create `pages/api/auth/[...nextauth].js`:
 
 #### 4. Registration endpoint
 Create `pages/api/register.js`:
-- Accepts `{ name, email, password, inviteCode }`
-- **Validates `inviteCode` against a `LEAGUE_INVITE_CODE` env var** — this gates registration to people who have the code (repurposes the old shared-secret concept as a one-time registration gate)
+- Accepts `{ name, email, password, venmoHandle }`
 - Validates: email uniqueness, name not empty, password minimum 8 characters
 - Hashes password with `bcryptjs.hash()` (use cost factor 12)
 - Inserts into `users` table using the existing `sql` tagged template (parameterized — never string interpolation)
@@ -155,7 +237,6 @@ In `pages/api/state.js`:
 #### 7. Cleanup
 - Delete `pages/api/auth.js` (replaced by `pages/api/auth/[...nextauth].js`)
 - Remove `LEAGUE_SECRET` and `COMMISSIONER_NAME` env vars from Vercel (after deploy)
-- Add `LEAGUE_INVITE_CODE` env var (shared with league members for registration only)
 - Remove all `sessionStorage` and `localStorage` identity code
 
 ### Database Architecture Note
@@ -173,11 +254,10 @@ This item introduces the first real table (`users`) and marks the beginning of a
 - **Drafter list:** Currently `s.drafters` is an array of name strings. This can stay as-is — names come from the `users` table instead of client input, but they're still stored as strings in the state JSONB. Additionally, store `userId` in the drafter/pick objects so the data is ready for relational queries when `tournaments` and `picks` tables are added later.
 
 ### Security Requirements
-- Registration is gated by `LEAGUE_INVITE_CODE` env var — prevents random account creation
 - Passwords hashed with bcryptjs cost factor 12 — no plaintext storage
 - `NEXTAUTH_SECRET` must be generated with `openssl rand -base64 32` — weak secrets allow JWT forgery
 - All database writes use the `sql` tagged template literal (parameterized queries) — never string concatenation
-- Registration endpoint must validate the NextAuth CSRF token from the cookie to prevent cross-site registration attacks
+- Registration endpoint should validate the NextAuth CSRF token from the cookie to prevent cross-site registration attacks
 - All API mutations validate server-side session — never trust client-supplied identity
 
 ### Scope Boundaries
@@ -186,7 +266,7 @@ This item introduces the first real table (`users`) and marks the beginning of a
 - No password reset flow — commissioner can reset in Neon console if needed, or add later
 - No role system beyond commissioner/member — `is_commissioner` boolean is sufficient
 - No rate limiting on auth endpoints (acceptable risk for ~12 known users; add later if needed)
-- The registration form can be minimal (name, email, password, invite code) — no profile pages
+- The registration form can be minimal (name, email, password, optional Venmo handle) — no profile pages
 
 ### Files to Touch
 - `lib/db.js` — add `users` table to `ensureTable()`
@@ -196,7 +276,7 @@ This item introduces the first real table (`users`) and marks the beginning of a
 - `pages/api/auth.js` — delete (replaced by NextAuth)
 - `pages/index.js` — replace auth gate, identity system, and header with session-based UI
 - `pages/_app.js` — wrap with `<SessionProvider>`
-- `.env` / Vercel env vars — add `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `LEAGUE_INVITE_CODE`; remove `LEAGUE_SECRET`, `COMMISSIONER_NAME`
+- `.env` / Vercel env vars — add `NEXTAUTH_SECRET`, `NEXTAUTH_URL`; remove `LEAGUE_SECRET`, `COMMISSIONER_NAME`
 
 ### Testing Notes
 - Register a new user, log in, refresh — session should persist
@@ -875,11 +955,13 @@ Settlement happens in the `updateScores` action in `pages/api/state.js`:
 
 ## 8. Champion Display with Venmo Pay Link
 
-### Problem
-When the tournament ends, there's no celebration moment — the scoreboard just shows final standings like any other refresh. There's also no easy way for losers to pay the winner. People forget, avoid, or delay payment because there's friction.
+**Status:** Champion banner is implemented (commit `41c52ad`). The Venmo pay link portion remains — it requires the `venmo_handle` field on the `users` table, which is collected during signup (item #1).
 
-### Goal
-When the tournament is complete (all rounds finished, final scores in), display a prominent champion banner/card at the top of the scoreboard. Include the winner's Venmo handle as a QR code and/or deep link so other league members can pay them instantly.
+### Problem
+~~When the tournament ends, there's no celebration moment~~ (resolved — champion banner now shows). There's still no easy way for losers to pay the winner. People forget, avoid, or delay payment because there's friction.
+
+### Remaining Goal
+Add a Venmo pay link to the existing champion banner using the winner's `venmo_handle` from the `users` table.
 
 ### Trigger
 The champion display appears **automatically** when the tournament ends. The condition is: `draftComplete === true` AND all golfers in the field have a status of `"F"` (finished) or `"cut"`/`"wd"` — meaning no one is still playing. This can be derived from the existing `s.scores` data on score refresh.
@@ -922,11 +1004,7 @@ See `public/mockup-champion.html` for a live reference mockup.
 - If winner has no Venmo handle set: show the banner without the payment button, just the champion display (trophy, name, score)
 
 ### Schema Change
-Add to `users` table (from item #1):
-```sql
-ALTER TABLE users ADD COLUMN venmo_handle TEXT;
-```
-Or include in the initial `users` table creation if item #1 hasn't shipped yet.
+The `venmo_handle` column is included in the `users` table creation in item #1 — no separate migration needed.
 
 ### Suggested Approach
 
@@ -973,11 +1051,9 @@ Render above the scoreboard when `tournamentComplete` is true:
 - **No new dependencies** — just a styled `<a>` tag, no QR library needed
 
 ### Dependencies
-- **Soft dependency on item #1 (auth)** — needs the `users` table to store `venmo_handle`. Without auth, could store Venmo handles in the JSONB state as a workaround.
-- **Works independently** — the champion display itself (without Venmo) has no dependencies
+- **Hard dependency on item #1 (auth)** — needs the `users` table with `venmo_handle` column (included in #1's schema). Champion banner is already implemented; this item adds the Venmo pay link only.
 
 ### Files to Touch
-- `lib/db.js` — add `venmo_handle` column to `users` table
 - `pages/index.js` — add `tournamentComplete` detection, champion banner component, Venmo pay link
 - `styles/globals.css` — champion banner styles (gold border, centered layout, Venmo button)
 - `pages/api/register.js` or new `pages/api/profile.js` — accept/return Venmo handle
@@ -995,23 +1071,209 @@ Render above the scoreboard when `tournamentComplete` is true:
 ---
 
 ## 9. Pull to Refresh on Mobile
-*Unrefined — needs spec*
 
-Add pull-to-refresh gesture support on mobile viewports so users can trigger a score/state refresh by pulling down on the page, matching native app behavior. Currently the only way to refresh is the header "Refresh" button or waiting for the 2-minute polling cycle.
+### Problem
+On mobile, the only ways to refresh scores are: the "↻ Refresh" button in the sticky header (small tap target, easy to miss) or waiting for the 2-minute auto-poll. Native apps train users to pull down for fresh data — the absence of this gesture makes the app feel like a website rather than an experience.
+
+### Goal
+Add a pull-to-refresh gesture on mobile viewports (`<= 768px`) that triggers the same score/state refresh as the header button. Show a visual indicator during the pull, then refresh data on release.
+
+### Current Refresh Implementation
+| Component | Location | What it does |
+|---|---|---|
+| `refreshScores()` | `pages/index.js` | Fetches leaderboard from `/api/golf`, posts updated scores via `statePost({ action: 'updateScores', ... })` |
+| `stateGet()` | `pages/index.js:62-72` | Fetches current state from `/api/state` |
+| Polling | `pages/index.js` | `setInterval` calls `stateGet()` every 5s during draft, every 2min after draft |
+| ↻ Refresh button | `pages/index.js:534-541` | Calls `refreshScores()`, disabled while `busy` |
+
+### Visual Spec
+
+**Pull indicator:** A small element that appears at the top of `<main>` as the user pulls down.
+
+- **Resting (no pull):** Hidden, `height: 0`, `overflow: hidden`
+- **Pulling (finger down, dragging):** Reveals progressively. Shows a single line of text: `↻ Pull to refresh` in DM Mono, 0.65rem, `var(--text-light)`. Max pull distance: 80px. The text rotates the `↻` arrow proportionally to pull distance (0° → 360°).
+- **Threshold reached (pulled past 60px):** Text changes to `↻ Release to refresh` in `var(--gold)`. Subtle haptic feedback via `navigator.vibrate(10)` if available.
+- **Released (refreshing):** Text changes to `Refreshing...` with a spinning `↻` animation (`@keyframes spin { to { transform: rotate(360deg) } }`, 0.8s linear infinite). Height holds at 40px.
+- **Complete:** Collapses back to `height: 0` with a 0.3s ease-out transition.
+
+**Styling:**
+- Container: `text-align: center; padding: 12px 0; transition: height 0.3s ease-out;`
+- Sits inside `<main>`, above all other content (above tabs, panels, etc.)
+- Only renders on viewports `<= 768px` (use CSS `display: none` on wider screens, skip touch listeners)
+
+### Suggested Approach
+
+#### 1. Touch event handling
+Add touch listeners to the `<main>` element (not `window` — avoids interfering with header):
+- `onTouchStart`: Record `startY` position. Only activate if `window.scrollY === 0` (page is at top).
+- `onTouchMove`: Calculate `deltaY = touch.clientY - startY`. If `deltaY > 0` and page is at top, set pull distance state. Call `e.preventDefault()` to block native scroll during pull (requires `{ passive: false }`).
+- `onTouchEnd`: If pull distance exceeds threshold (60px), trigger refresh. Reset pull state.
+
+#### 2. State
+```js
+const [pullDistance, setPullDistance] = useState(0);
+const [isRefreshing, setIsRefreshing] = useState(false);
+const pullThreshold = 60;
+```
+
+#### 3. Refresh action
+On release past threshold:
+```js
+setIsRefreshing(true);
+setPullDistance(0);
+if (draftDone) {
+  await refreshScores();
+} else {
+  setS(await stateGet());
+}
+setIsRefreshing(false);
+```
+
+This reuses the existing `refreshScores()` (post-draft) or `stateGet()` (pre-draft) — no new API calls.
+
+#### 4. Prevent double-refresh
+If `isRefreshing` or `busy` is true, ignore new pull gestures.
+
+#### 5. Mobile-only
+Wrap the touch event attachment in a media query check or use CSS to hide the indicator on desktop. Touch events won't fire on desktop anyway, but the indicator element should be hidden via `@media (min-width: 769px) { .pull-indicator { display: none; } }`.
+
+### Acceptance Criteria
+- [ ] Pulling down on the page when scrolled to top reveals a visual "Pull to refresh" indicator
+- [ ] Releasing past the threshold (60px) triggers a score/state refresh
+- [ ] Releasing before the threshold cancels without refreshing
+- [ ] A "Refreshing..." state is shown while data loads
+- [ ] The indicator collapses smoothly after refresh completes
+- [ ] Pull-to-refresh only activates on mobile viewports (`<= 768px`)
+- [ ] Pull-to-refresh only activates when the page is scrolled to the top (`scrollY === 0`)
+- [ ] Pull-to-refresh is disabled while a refresh is already in progress
+- [ ] The existing ↻ Refresh button continues to work as before
+- [ ] No interference with normal scrolling behavior
+
+### Scope Boundaries
+- No third-party libraries — pure touch event handling (the gesture is simple enough)
+- No pull-to-refresh on desktop (mouse users have the button)
+- No overscroll-behavior CSS changes (let the browser handle its own overscroll on non-pull scenarios)
+- No custom spring physics — a simple linear pull-to-threshold is sufficient
+- Does not replace the existing Refresh button — both work
+
+### Files to Touch
+- `pages/index.js` — add touch event handlers to `<main>`, pull indicator component, pull state
+- `styles/globals.css` — add `.pull-indicator` styles, spin animation, mobile-only media query
+
+### Testing Notes
+- On mobile viewport, scroll to top, pull down — verify indicator appears
+- Pull past 60px and release — verify refresh triggers and data updates
+- Pull less than 60px and release — verify no refresh, indicator collapses
+- Pull while already refreshing — verify gesture is ignored
+- Scroll down in the page, then pull — verify pull-to-refresh does NOT activate (only at `scrollY === 0`)
+- Test on desktop — verify pull indicator is not visible, touch events don't fire
+- Test during draft phase — verify `stateGet()` is called (not `refreshScores()`)
+- Test during scoreboard phase — verify `refreshScores()` is called
+- Verify normal scroll behavior is not affected (scrolling down through team cards works normally)
 
 ---
 
 ## 10. Collect Venmo Handle on Sign Up
-*Unrefined — needs spec*
+**Status:** Folded into item #1. The `venmo_handle` column is included in the `users` table schema, and the registration form includes an optional Venmo handle field. This item is complete when #1 ships.
 
-Add an optional "Venmo username" field to the registration form (item #1). Store in `users.venmo_handle`. This is used by the champion display (item #8) to generate the pay link. Should also be editable after registration via a simple profile/settings UI.
+See `public/mockup-signup.html` for the registration form mockup with the Venmo field under a "Get Paid" heading.
 
 ---
 
 ## 11. Right-Align Header Buttons
-*Unrefined — needs spec*
 
-The header-right section (`pages/index.js:504-527`, `styles/globals.css:46`) contains the user badge, refresh timestamp, refresh button, and reset button. On some viewports these wrap awkwardly. Ensure buttons are properly right-aligned and don't collide with the tournament name/selector on narrow screens.
+### Problem
+The `.header-right` container (`pages/index.js:522-545`, `styles/globals.css:46`) uses `display: flex; flex-wrap: wrap; gap: 10px;` which causes the badges and buttons to wrap to a second line on narrow viewports (~375-500px). When wrapped, the items left-align under the tournament name, creating a ragged, unfinished look. The header height jumps unpredictably, and the Reset button can end up directly under the logo, visually disconnected from its group.
+
+### Goal
+Make the header layout clean and predictable at all viewport widths. On narrow screens, condense the header-right items so they stay right-aligned without wrapping, or gracefully stack into a consistent layout.
+
+### Current Layout
+```
+Desktop (>768px):
+┌──────────────────────────────────────────────────────────────┐
+│ The Masters                    Steve  ↻ 2:30 PM  Refresh  Reset │
+└──────────────────────────────────────────────────────────────┘
+
+Mobile (375px) — CURRENT (broken):
+┌──────────────────────────────┐
+│ The Masters     Steve  ↻ 2:30│
+│ Refresh  Reset               │  ← wraps, left-aligned, messy
+└──────────────────────────────┘
+```
+
+### Visual Spec
+
+**Desktop (>768px):** No change — single row, all items visible, flex-end aligned.
+
+**Mobile (<=768px):**
+```
+┌──────────────────────────────┐
+│ The Masters             Steve│
+│              ↻ 2:30  ↻  Reset│  ← right-aligned second row
+└──────────────────────────────┘
+```
+
+- The header becomes a two-row layout using `flex-wrap: wrap`
+- `.logo` gets `flex: 1 1 100%` on mobile to force the second row
+- `.header-right` gets `flex: 1 1 100%; justify-content: flex-end;` so items right-align on the second row
+- Reduce header padding from `16px 32px` to `12px 16px` on mobile (already in some mockups)
+- Reduce badge font size slightly on mobile: `font-size: 0.6rem`
+- The ↻ Refresh button label text is hidden on mobile — just show the `↻` symbol. Use a `<span className="refresh-label">` around " Refresh" and hide with `display: none` at `<=768px`
+
+**Narrow mobile (<=360px):**
+- Hide the timestamp badge entirely (`display: none`) to save space — the refresh button is sufficient
+- Keep: user badge, refresh button (icon only), reset button
+
+### Suggested Approach
+
+#### 1. CSS changes (`styles/globals.css`)
+```css
+@media (max-width: 768px) {
+  header { padding: 12px 16px; }
+  .logo { flex: 1 1 100%; }
+  .header-right {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+  .badge { font-size: 0.6rem; }
+  .refresh-label { display: none; }
+}
+
+@media (max-width: 360px) {
+  .badge.timestamp { display: none; }
+}
+```
+
+#### 2. HTML changes (`pages/index.js`)
+- Wrap the " Refresh" text in the refresh button: `↻<span className="refresh-label"> Refresh</span>`
+- Add `className="badge dim timestamp"` to the refresh timestamp badge (currently just `badge dim`)
+
+### Acceptance Criteria
+- [ ] On desktop (>768px), header layout is unchanged — single row, all items visible
+- [ ] On mobile (<=768px), header items are arranged in two rows: logo on first row, badges/buttons right-aligned on second row
+- [ ] On mobile, the Refresh button shows only `↻` (label text hidden)
+- [ ] On narrow mobile (<=360px), the timestamp badge is hidden
+- [ ] No items overlap or collide at any viewport width from 320px to 1440px
+- [ ] Header height is predictable (no jumpy reflow on resize)
+
+### Scope Boundaries
+- CSS-only fix with one minor HTML change (adding a span + class) — no logic changes
+- No hamburger menu or dropdown — the header items are few enough to fit in two rows
+- No changes to button functionality
+- Must work with the tournament selector dropdown from #6 when it ships (the `.logo` becoming a dropdown button doesn't affect this layout — it still occupies the same space)
+
+### Files to Touch
+- `pages/index.js` — add `refresh-label` span, add `timestamp` class to timestamp badge
+- `styles/globals.css` — add responsive media queries for header layout
+
+### Testing Notes
+- Test at 375px (iPhone SE), 390px (iPhone 14), 768px (tablet), 1280px (desktop)
+- Test at 320px — verify nothing overflows
+- Test at 360px — verify timestamp badge is hidden, other items remain
+- Test with long tournament name ("The Memorial Tournament presented by Workday") — verify no overflow
+- Test with and without the timestamp badge (before and after first score refresh)
+- Test with Reset button visible — verify it stays right-aligned next to Refresh
 
 ---
 
