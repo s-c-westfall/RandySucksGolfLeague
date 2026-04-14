@@ -119,10 +119,12 @@ export default function Home() {
 
   const pollingRef = useRef(null);
   const refreshRef = useRef(null);
+  const passwordRef = useRef(null);
 
   const [loadError, setLoadError] = useState(false);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [secretInput, setSecretInput] = useState("");
+  const [liveMsg, setLiveMsg] = useState("");
 
   const wrap = async (fn) => {
     setBusy(true);
@@ -190,6 +192,11 @@ export default function Home() {
     }
     return () => clearInterval(pollingRef.current);
   }, [s?.draftComplete]);
+
+  // focus password input when auth is required
+  useEffect(() => {
+    if (needsAuth && passwordRef.current) passwordRef.current.focus();
+  }, [needsAuth]);
 
   // derived identity
   const isCreator =
@@ -407,6 +414,8 @@ export default function Home() {
       }
       const u = await statePost("updateScores", { scores });
       setS(u);
+      setLiveMsg('Scores updated');
+      setTimeout(() => setLiveMsg(''), 3000);
     } catch (e) {
       console.error("Score refresh failed:", e);
     }
@@ -488,7 +497,9 @@ export default function Home() {
         <p>Enter the league password to make changes.</p>
         <div className="row-gap" style={{ marginTop: 12 }}>
           <input
+            ref={passwordRef}
             type="password"
+            aria-label="League password"
             value={secretInput}
             onChange={(e) => setSecretInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleLogin()}
@@ -498,7 +509,7 @@ export default function Home() {
             Enter
           </button>
         </div>
-        {err && <div className="error">{err}</div>}
+        {err && <div className="error" role="alert">{err}</div>}
       </div>
     );
 
@@ -528,8 +539,15 @@ export default function Home() {
 
   return (
     <>
+      <a href="#main-content" className="skip-nav">Skip to main content</a>
+      <div role="status" aria-live="polite" className="sr-only">{liveMsg}</div>
       <Head>
-        <title>The Draft — Golf League</title>
+        <title>
+          {!s?.configured ? 'Setup — Golf League'
+            : inLobby ? 'Lobby — Golf League'
+            : inDraft ? 'Draft — Golf League'
+            : 'Scoreboard — Golf League'}
+        </title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap"
@@ -565,7 +583,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main>
+      <main id="main-content">
         {/* ── IDENTIFY: prompt for name when not recognized ── */}
         {!myName &&
           !isCreator &&
@@ -673,7 +691,7 @@ export default function Home() {
               </div>
             )}
 
-            {err && <div className="error">{err}</div>}
+            {err && <div className="error" role="alert">{err}</div>}
           </div>
         )}
 
@@ -695,7 +713,7 @@ export default function Home() {
                     {d}
                     {d === s.creator ? " (host)" : ""}
                     {d === myName && d !== s.creator && (
-                      <button onClick={leaveDraft} disabled={busy}>
+                      <button onClick={leaveDraft} disabled={busy} aria-label={`Remove ${d}`}>
                         ×
                       </button>
                     )}
@@ -766,22 +784,28 @@ export default function Home() {
               )}
             </div>
 
-            {err && <div className="error">{err}</div>}
+            {err && <div className="error" role="alert">{err}</div>}
           </div>
         )}
 
         {/* ── TABS ── */}
         {s.draftOrder?.length > 0 && (
           <>
-            <div className="tabs">
+            <div className="tabs" role="tablist">
               <button
                 className={`tab ${tab === "draft" ? "active" : ""}`}
+                role="tab"
+                aria-selected={tab === "draft"}
+                aria-controls="panel-draft"
                 onClick={() => setTab("draft")}
               >
                 Draft Board
               </button>
               <button
                 className={`tab ${tab === "scores" ? "active" : ""}`}
+                role="tab"
+                aria-selected={tab === "scores"}
+                aria-controls="panel-scores"
                 onClick={() => setTab("scores")}
               >
                 Scoreboard
@@ -790,7 +814,7 @@ export default function Home() {
 
             {/* DRAFT TAB */}
             {tab === "draft" && (
-              <div>
+              <div role="tabpanel" id="panel-draft">
                 {inDraft && (isMyTurn || isCreator) && (
                   <div className="panel search-panel">
                     <h3>
@@ -801,6 +825,7 @@ export default function Home() {
                     </h3>
                     <div className="row-gap" style={{ marginBottom: 10 }}>
                       <input
+                        aria-label="Search player"
                         value={searchQ}
                         onChange={(e) => { setSearchQ(e.target.value); setHighlightIndex(-1); }}
                         placeholder="Search player..."
@@ -835,10 +860,18 @@ export default function Home() {
                         <div
                           key={p.playerId}
                           className={`result-item ${drafted.has(p.playerId) ? "drafted" : ""} ${i === highlightIndex ? "highlighted" : ""}`}
+                          role="button"
+                          tabIndex={drafted.has(p.playerId) ? -1 : 0}
                           onClick={() =>
                             !drafted.has(p.playerId) &&
                             makePick(p.playerId, p.name)
                           }
+                          onKeyDown={(e) => {
+                            if ((e.key === 'Enter' || e.key === ' ') && !drafted.has(p.playerId)) {
+                              e.preventDefault();
+                              makePick(p.playerId, p.name);
+                            }
+                          }}
                         >
                           <span>{p.name}</span>
                           <span className="muted">
@@ -900,13 +933,13 @@ export default function Home() {
                   })}
                 </div>
 
-                {err && <div className="error">{err}</div>}
+                {err && <div className="error" role="alert">{err}</div>}
               </div>
             )}
 
             {/* SCORES TAB */}
             {tab === "scores" && (
-              <div>
+              <div role="tabpanel" id="panel-scores">
                 {!draftDone ? (
                   <div className="empty-state">
                     Complete the draft to see scores.
@@ -985,9 +1018,9 @@ export default function Home() {
                                 >
                                   {g.name}
                                   {g.counting && (
-                                    <span className="star">★</span>
+                                    <span className="star" aria-hidden="true">★</span>
                                   )}
-                                  {!g.counting && <span className="ex">✕</span>}
+                                  {!g.counting && <span className="ex" aria-hidden="true">✕</span>}
                                 </span>
                                 <span
                                   className={`golfer-status ${g.cut ? "cut" : ""}`}
@@ -1064,6 +1097,7 @@ export default function Home() {
                       {assignDrafter && (
                         <>
                           <input
+                            aria-label="Search player"
                             value={assignSearch}
                             onChange={(e) => setAssignSearch(e.target.value)}
                             placeholder="Search player..."
@@ -1085,10 +1119,18 @@ export default function Home() {
                                   <div
                                     key={p.playerId}
                                     className={`result-item ${taken ? "drafted" : ""}`}
+                                    role="button"
+                                    tabIndex={taken ? -1 : 0}
                                     onClick={() =>
                                       !taken &&
                                       assignGolferToDrafter(p.playerId, p.name)
                                     }
+                                    onKeyDown={(e) => {
+                                      if ((e.key === 'Enter' || e.key === ' ') && !taken) {
+                                        e.preventDefault();
+                                        assignGolferToDrafter(p.playerId, p.name);
+                                      }
+                                    }}
                                   >
                                     <span>{p.name}</span>
                                     <span className="muted">
@@ -1105,7 +1147,7 @@ export default function Home() {
                       )}
                     </div>
 
-                    {err && <div className="error">{err}</div>}
+                    {err && <div className="error" role="alert">{err}</div>}
                   </div>
                 )}
               </div>
