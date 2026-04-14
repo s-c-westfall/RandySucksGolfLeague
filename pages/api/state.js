@@ -287,6 +287,31 @@ export default async function handler(req, res) {
           lastRefreshed: new Date().toISOString(),
         };
         await setState(updated);
+
+        // Auto-settle active challenges when draft is complete
+        if (updated.draftComplete) {
+          try {
+            const posMap = computeRankings(updated);
+            const active = await sql`SELECT * FROM challenges WHERE status = 'active'`;
+            for (const c of active) {
+              const cp = posMap[c.challenger_name];
+              const op = posMap[c.opponent_name];
+              let winner = null;
+              if (cp != null && op != null && cp !== op) {
+                winner = cp < op ? c.challenger_name : c.opponent_name;
+              }
+              await sql`
+                UPDATE challenges
+                SET status = 'settled', winner_name = ${winner}, settled_at = now()
+                WHERE id = ${c.id}
+              `;
+            }
+          } catch (e) {
+            // non-fatal: don't block score update if settle fails
+            console.error('Challenge auto-settle failed:', e);
+          }
+        }
+
         return res.status(200).json(updated);
       }
 

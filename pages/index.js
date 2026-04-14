@@ -407,6 +407,12 @@ export default function Home() {
   // Winner Venmo handle (fetched when tournament completes)
   const [winnerVenmo, setWinnerVenmo] = useState(null);
 
+  // Challenges
+  const [challenges, setChallenges] = useState([]);
+  const [challengeOpponent, setChallengeOpponent] = useState('');
+  const [challengeAmount, setChallengeAmount] = useState('');
+  const [challengeErr, setChallengeErr] = useState('');
+
   // Derived from session
   const myName = session?.user?.name || "";
   const isCommissioner = session?.user?.isCommissioner || false;
@@ -423,6 +429,17 @@ export default function Home() {
     }
   };
 
+  const fetchChallenges = async (tournId) => {
+    if (!tournId) return;
+    try {
+      const res = await fetch(`/api/challenges?tournId=${encodeURIComponent(tournId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setChallenges(Array.isArray(data) ? data : []);
+      }
+    } catch {}
+  };
+
   // initial load
   useEffect(() => {
     if (status === "authenticated") {
@@ -430,6 +447,7 @@ export default function Home() {
         .then((data) => {
           setS(data);
           if (data.draftComplete) setTab("scores");
+          if (data.tournId) fetchChallenges(data.tournId);
         })
         .catch(() => setLoadError(true));
       fetch("/api/history")
@@ -671,6 +689,7 @@ export default function Home() {
       setS(u);
       setLiveMsg('Scores updated');
       setTimeout(() => setLiveMsg(''), 3000);
+      if (u.tournId) fetchChallenges(u.tournId);
     } catch (e) {
       console.error("Score refresh failed:", e);
     }
@@ -683,12 +702,52 @@ export default function Home() {
       setSchedule(null);
       setS(await stateGet());
       setTab("draft");
+      setChallenges([]);
       // Refresh past tournaments list after archiving
       fetch("/api/history")
         .then((r) => r.json())
         .then((data) => Array.isArray(data) && setPastTournaments(data))
         .catch(() => {});
     });
+
+  const sendChallenge = async () => {
+    if (!challengeOpponent || !challengeAmount) return;
+    setChallengeErr('');
+    try {
+      const res = await fetch('/api/challenges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          opponentName: challengeOpponent,
+          amount: challengeAmount,
+          tournId: s?.tournId,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setChallengeErr(d.error || 'Failed to send challenge');
+        return;
+      }
+      setChallengeOpponent('');
+      setChallengeAmount('');
+      setChallengeErr('');
+      if (s?.tournId) fetchChallenges(s.tournId);
+    } catch (e) {
+      setChallengeErr('Failed to send challenge');
+    }
+  };
+
+  const respondChallenge = async (challengeId, action) => {
+    try {
+      await fetch('/api/challenges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, challengeId }),
+      });
+      if (s?.tournId) fetchChallenges(s.tournId);
+    } catch {}
+  };
 
   // scroll highlighted result into view
   useEffect(() => {
@@ -785,6 +844,19 @@ export default function Home() {
     .slice(0, 20);
 
   const teams = s?.draftComplete ? buildTeams(s, s.previousRankings) : [];
+
+  // Challenges: position map and current user's position
+  const posMap = {};
+  teams.forEach(t => {
+    if (typeof t.position === 'number') posMap[t.name] = t.position;
+  });
+  const myTeam = teams.find(t => t.name === session?.user?.name);
+  const myPosition = myTeam?.position ?? null;
+
+  const posLabel = (pos) => {
+    if (pos == null) return '–';
+    return `#${pos}`;
+  };
 
   const tournamentComplete =
     s?.draftComplete &&
@@ -1144,6 +1216,15 @@ export default function Home() {
               >
                 Scoreboard
               </button>
+              <button
+                className={`tab challenges-tab ${tab === "challenges" ? "active" : ""}`}
+                role="tab"
+                aria-selected={tab === "challenges"}
+                aria-controls="panel-challenges"
+                onClick={() => setTab("challenges")}
+              >
+                Challenges
+              </button>
             </div>
 
             {/* DRAFT TAB */}
@@ -1299,112 +1380,134 @@ export default function Home() {
                     No scores yet — hit Refresh.
                   </div>
                 ) : (
-                  <>
-                    {tournamentComplete && teams[0] && (
-                      <div className="champion-banner">
-                        <div className="champion-trophy">🏆</div>
-                        <div className="champion-label">Champion</div>
-                        <div className="champion-name">{teams[0].name}</div>
-                        <div className="champion-score">
-                          {fmtScore(teams[0].teamTotal)}
-                        </div>
-                        {winnerVenmo && (
-                          <>
-                            <div className="champion-divider" />
-                            <div className="venmo-section">
-                              <a
-                                className="venmo-link"
-                                href={`https://account.venmo.com/pay?recipients=${encodeURIComponent(winnerVenmo)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <span className="venmo-link-icon">V</span>
-                                Pay {teams[0].name} on Venmo
-                              </a>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-                    <div className="scoreboard">
-                      {teams.map((team, rank) => (
-                        <div
-                          key={team.name}
-                          className={`team-card ${rank === 0 ? "leader" : ""}`}
-                        >
-                          <div className="team-header">
-                            <div
-                              className={`move-pip ${team.movement > 0 ? "up" : team.movement < 0 ? "down" : ""}`}
-                            />
-                            <div className="team-header-inner">
-                              <div className="rank-group">
-                                <span
-                                  className={`team-rank ${rank === 0 ? "gold" : ""}`}
+                  <div className="scoreboard-layout">
+                    {/* LEFT: scoreboard column */}
+                    <div className="scoreboard-col">
+                      {tournamentComplete && teams[0] && (
+                        <div className="champion-banner">
+                          <div className="champion-trophy">🏆</div>
+                          <div className="champion-label">Champion</div>
+                          <div className="champion-name">{teams[0].name}</div>
+                          <div className="champion-score">
+                            {fmtScore(teams[0].teamTotal)}
+                          </div>
+                          {winnerVenmo && (
+                            <>
+                              <div className="champion-divider" />
+                              <div className="venmo-section">
+                                <a
+                                  className="venmo-link"
+                                  href={`https://account.venmo.com/pay?recipients=${encodeURIComponent(winnerVenmo)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                 >
-                                  {team.displayPos}
-                                </span>
-                                {team.movement !== 0 && (
+                                  <span className="venmo-link-icon">V</span>
+                                  Pay {teams[0].name} on Venmo
+                                </a>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      <div className="scoreboard">
+                        {teams.map((team, rank) => (
+                          <div
+                            key={team.name}
+                            className={`team-card ${rank === 0 ? "leader" : ""}`}
+                          >
+                            <div className="team-header">
+                              <div
+                                className={`move-pip ${team.movement > 0 ? "up" : team.movement < 0 ? "down" : ""}`}
+                              />
+                              <div className="team-header-inner">
+                                <div className="rank-group">
                                   <span
-                                    className={`move-indicator ${team.movement > 0 ? "up" : "down"}`}
+                                    className={`team-rank ${rank === 0 ? "gold" : ""}`}
                                   >
-                                    {team.movement > 0
-                                      ? `▲${team.movement}`
-                                      : `▼${Math.abs(team.movement)}`}
+                                    {team.displayPos}
                                   </span>
-                                )}
-                                {team.movement === 0 && (
-                                  <span className="move-indicator same">–</span>
-                                )}
+                                  {team.movement !== 0 && (
+                                    <span
+                                      className={`move-indicator ${team.movement > 0 ? "up" : "down"}`}
+                                    >
+                                      {team.movement > 0
+                                        ? `▲${team.movement}`
+                                        : `▼${Math.abs(team.movement)}`}
+                                    </span>
+                                  )}
+                                  {team.movement === 0 && (
+                                    <span className="move-indicator same">–</span>
+                                  )}
+                                </div>
+                                <span className="team-name">{team.name}</span>
+                                <span
+                                  className={`team-total ${scoreClass(team.teamTotal)}`}
+                                >
+                                  {fmtScore(team.teamTotal)}
+                                </span>
                               </div>
-                              <span className="team-name">{team.name}</span>
-                              <span
-                                className={`team-total ${scoreClass(team.teamTotal)}`}
-                              >
-                                {fmtScore(team.teamTotal)}
-                              </span>
+                            </div>
+                            <div className="team-golfers">
+                              {team.golfers.map((g) => (
+                                <div key={g.playerId} className="golfer-row">
+                                  <span
+                                    className={`golfer-name ${g.counting ? "counting" : "nc"}`}
+                                  >
+                                    {g.name}
+                                    {g.counting && (
+                                      <span className="star" aria-hidden="true">★</span>
+                                    )}
+                                    {!g.counting && <span className="ex" aria-hidden="true">✕</span>}
+                                  </span>
+                                  <span
+                                    className={`golfer-status ${g.cut ? "cut" : ""}`}
+                                  >
+                                    {g.cut
+                                      ? g.status.toUpperCase()
+                                      : g.thru === "F"
+                                        ? "Done"
+                                        : g.thru === "–"
+                                          ? ""
+                                          : /^\d+$/.test(g.thru)
+                                            ? `Thru ${g.thru}`
+                                            : g.thru}
+                                  </span>
+                                  <span
+                                    className={`golfer-score ${g.cut ? "" : scoreClass(g.total)}`}
+                                  >
+                                    {g.cut ? "–" : fmtScore(g.total)}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                          <div className="team-golfers">
-                            {team.golfers.map((g) => (
-                              <div key={g.playerId} className="golfer-row">
-                                <span
-                                  className={`golfer-name ${g.counting ? "counting" : "nc"}`}
-                                >
-                                  {g.name}
-                                  {g.counting && (
-                                    <span className="star" aria-hidden="true">★</span>
-                                  )}
-                                  {!g.counting && <span className="ex" aria-hidden="true">✕</span>}
-                                </span>
-                                <span
-                                  className={`golfer-status ${g.cut ? "cut" : ""}`}
-                                >
-                                  {g.cut
-                                    ? g.status.toUpperCase()
-                                    : g.thru === "F"
-                                      ? "Done"
-                                      : g.thru === "–"
-                                        ? ""
-                                        : /^\d+$/.test(g.thru)
-                                          ? `Thru ${g.thru}`
-                                          : g.thru}
-                                </span>
-                                <span
-                                  className={`golfer-score ${g.cut ? "" : scoreClass(g.total)}`}
-                                >
-                                  {g.cut ? "–" : fmtScore(g.total)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
+                        ))}
+                      </div>
+                      {s.lastRefreshed && (
+                        <div className="last-refreshed">
+                          Last updated: {new Date(s.lastRefreshed).toLocaleString()}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  </>
-                )}
-                {s.lastRefreshed && (
-                  <div className="last-refreshed">
-                    Last updated: {new Date(s.lastRefreshed).toLocaleString()}
+
+                    {/* RIGHT: challenges panel (desktop only) */}
+                    <div className="challenges-panel">
+                      <ChallengesPanel
+                        challenges={challenges}
+                        drafters={s?.drafters || []}
+                        myName={myName}
+                        session={session}
+                        posMap={posMap}
+                        posLabel={posLabel}
+                        challengeOpponent={challengeOpponent}
+                        setChallengeOpponent={setChallengeOpponent}
+                        challengeAmount={challengeAmount}
+                        setChallengeAmount={setChallengeAmount}
+                        challengeErr={challengeErr}
+                        sendChallenge={sendChallenge}
+                        respondChallenge={respondChallenge}
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -1506,6 +1609,27 @@ export default function Home() {
                 )}
               </div>
             )}
+
+            {/* CHALLENGES TAB (mobile only) */}
+            {tab === "challenges" && (
+              <div role="tabpanel" id="panel-challenges">
+                <ChallengesPanel
+                  challenges={challenges}
+                  drafters={s?.drafters || []}
+                  myName={myName}
+                  session={session}
+                  posMap={posMap}
+                  posLabel={posLabel}
+                  challengeOpponent={challengeOpponent}
+                  setChallengeOpponent={setChallengeOpponent}
+                  challengeAmount={challengeAmount}
+                  setChallengeAmount={setChallengeAmount}
+                  challengeErr={challengeErr}
+                  sendChallenge={sendChallenge}
+                  respondChallenge={respondChallenge}
+                />
+              </div>
+            )}
           </>
         )}
 
@@ -1513,6 +1637,194 @@ export default function Home() {
         </>}
       </main>
     </>
+  );
+}
+
+// ── ChallengesPanel component ──────────────────────────────────────────────────
+function ChallengesPanel({
+  challenges, drafters, myName, session, posMap, posLabel,
+  challengeOpponent, setChallengeOpponent,
+  challengeAmount, setChallengeAmount,
+  challengeErr, sendChallenge, respondChallenge,
+}) {
+  const pending = challenges.filter(c => c.status === 'pending');
+  const active = challenges.filter(c => c.status === 'active');
+  const settled = challenges.filter(c => c.status === 'settled');
+  const declined = challenges.filter(c => c.status === 'declined');
+
+  const pendingReceived = pending.filter(c => c.opponent_name === myName);
+  const pendingSent = pending.filter(c => c.challenger_name === myName);
+
+  return (
+    <div className="challenges-panel-inner">
+      <div className="bets-panel-header">
+        Challenges
+        {challenges.length > 0 && (
+          <span className="bet-count">{challenges.length}</span>
+        )}
+      </div>
+
+      {/* Create challenge form */}
+      {session && (
+        <div className="bet-create">
+          <div className="bet-create-label">Send a Challenge</div>
+          <p className="bet-create-desc">Pick an opponent — you&apos;re betting you&apos;ll finish above them</p>
+          <select
+            value={challengeOpponent}
+            onChange={e => setChallengeOpponent(e.target.value)}
+            style={{ width: '100%', marginBottom: 8 }}
+          >
+            <option value="">Select opponent...</option>
+            {(drafters || []).filter(d => d !== myName).map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+          <div className="bet-create-row">
+            <input
+              value={challengeAmount}
+              onChange={e => setChallengeAmount(e.target.value)}
+              placeholder='Amount (e.g. "$5", "a beer")'
+              onKeyDown={e => e.key === 'Enter' && challengeOpponent && challengeAmount && sendChallenge()}
+            />
+            <button
+              className="btn-sm"
+              onClick={sendChallenge}
+              disabled={!challengeOpponent || !challengeAmount}
+            >
+              Challenge
+            </button>
+          </div>
+          {challengeErr && <div className="error" role="alert" style={{ marginTop: 6, fontSize: '0.75rem' }}>{challengeErr}</div>}
+        </div>
+      )}
+
+      {/* Pending — received */}
+      {pendingReceived.length > 0 && (
+        <>
+          <div className="bets-section-header">Incoming Challenges</div>
+          {pendingReceived.map(c => (
+            <div key={c.id} className="bet-card bet-open">
+              <div className="bet-top">
+                <span className="bet-challenger">{c.challenger_name}</span>
+                <span className="bet-amount">{c.amount}</span>
+              </div>
+              <div className="bet-challenge-text">
+                challenges you — they bet they&apos;ll finish above you
+              </div>
+              <div className="bet-actions">
+                <button className="btn-accept" onClick={() => respondChallenge(c.id, 'accept')}>Accept</button>
+                <button className="btn-cancel" onClick={() => respondChallenge(c.id, 'decline')}>Decline</button>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      {/* Pending — sent */}
+      {pendingSent.length > 0 && (
+        <>
+          <div className="bets-section-header">Sent Challenges</div>
+          {pendingSent.map(c => (
+            <div key={c.id} className="bet-card bet-open">
+              <div className="bet-top">
+                <span className="bet-challenger">vs {c.opponent_name}</span>
+                <span className="bet-amount">{c.amount}</span>
+              </div>
+              <div className="bet-challenge-text">Awaiting response...</div>
+              <div className="bet-actions">
+                <button className="btn-cancel" onClick={() => respondChallenge(c.id, 'withdraw')}>Withdraw</button>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      {/* Declined */}
+      {declined.length > 0 && (
+        <>
+          <div className="bets-section-header">Declined</div>
+          {declined.map(c => (
+            <div key={c.id} className="bet-card" style={{ opacity: 0.5 }}>
+              <div className="bet-top">
+                <span className="bet-challenger">{c.challenger_name} vs {c.opponent_name}</span>
+                <span className="bet-amount">{c.amount}</span>
+              </div>
+              <div className="bet-challenge-text" style={{ color: 'var(--cut)' }}>Declined</div>
+            </div>
+          ))}
+        </>
+      )}
+
+      {/* Active */}
+      {active.length > 0 && (
+        <>
+          <div className="bets-section-header">Active</div>
+          {active.map(c => {
+            const cp = posMap[c.challenger_name];
+            const op = posMap[c.opponent_name];
+            const challengerLeading = cp != null && op != null && cp < op;
+            const opponentLeading = cp != null && op != null && op < cp;
+            return (
+              <div key={c.id} className="bet-card bet-active">
+                <div className="bet-matchup">
+                  <div className={`bet-player ${challengerLeading ? 'leading' : 'trailing'}`}>
+                    <span className="bet-player-name">{c.challenger_name}</span>
+                    <span className="bet-player-pos">{posLabel(cp)}</span>
+                  </div>
+                  <div className="bet-vs">vs</div>
+                  <div className={`bet-player ${opponentLeading ? 'leading' : 'trailing'}`}>
+                    <span className="bet-player-name">{c.opponent_name}</span>
+                    <span className="bet-player-pos">{posLabel(op)}</span>
+                  </div>
+                </div>
+                <div className="bet-amount-row">
+                  <span className="bet-amount">{c.amount}</span>
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
+
+      {/* Settled */}
+      {settled.length > 0 && (
+        <>
+          <div className="bets-section-header">Settled</div>
+          {settled.map(c => {
+            const cp = posMap[c.challenger_name];
+            const op = posMap[c.opponent_name];
+            const isPush = c.winner_name === null;
+            const challengerWon = c.winner_name === c.challenger_name;
+            const opponentWon = c.winner_name === c.opponent_name;
+            return (
+              <div key={c.id} className="bet-card bet-settled">
+                <div className="bet-matchup">
+                  <div className={`bet-player ${challengerWon ? 'winner' : opponentWon ? 'loser' : ''}`}>
+                    <span className="bet-player-name">{c.challenger_name}</span>
+                    <span className="bet-player-pos">{posLabel(cp)}</span>
+                  </div>
+                  <div className="bet-vs">vs</div>
+                  <div className={`bet-player ${opponentWon ? 'winner' : challengerWon ? 'loser' : ''}`}>
+                    <span className="bet-player-name">{c.opponent_name}</span>
+                    <span className="bet-player-pos">{posLabel(op)}</span>
+                  </div>
+                </div>
+                <div className="bet-amount-row">
+                  <span className="bet-amount">{c.amount}</span>
+                </div>
+                <div className={`bet-result ${isPush ? 'push' : 'won'}`}>
+                  {isPush ? 'Push — tie' : `${c.winner_name} wins`}
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
+
+      {challenges.length === 0 && (
+        <div className="bets-empty">No challenges yet. Send one above!</div>
+      )}
+    </div>
   );
 }
 

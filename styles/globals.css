@@ -981,3 +981,260 @@ select:focus-visible {
   flex-wrap: wrap;
   margin-bottom: 16px;
 }
+
+/* ═══════════════════════════════════════════
+   SCOREBOARD TWO-COLUMN LAYOUT (desktop)
+═══════════════════════════════════════════ */
+.scoreboard-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
+  align-items: start;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.scoreboard-col { min-width: 0; }
+@media (max-width: 768px) {
+  .scoreboard-layout { grid-template-columns: 1fr; }
+  .scoreboard-layout .challenges-panel { display: none; }
+}
+
+/* ═══════════════════════════════════════════
+   CHALLENGES PANEL
+═══════════════════════════════════════════ */
+.challenges-panel {
+  min-width: 0;
+}
+.challenges-panel-inner {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.bets-panel-header {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.95rem;
+  color: var(--gold-light);
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(201,168,76,0.15);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bet-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--text-light);
+  background: rgba(255,255,255,0.06);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+.bets-section-header {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-light);
+  padding: 10px 16px 6px;
+  background: rgba(0,0,0,0.1);
+}
+.bets-empty {
+  text-align: center;
+  padding: 20px 16px;
+  color: var(--text-light);
+  font-size: 0.8rem;
+}
+
+/* Create bet form */
+.bet-create {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.bet-create-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-light);
+  margin-bottom: 8px;
+}
+.bet-create-desc {
+  font-size: 0.78rem;
+  color: var(--text-light);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+.bet-create-row {
+  display: flex;
+  gap: 6px;
+}
+.bet-create-row input {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--cream);
+  padding: 7px 10px;
+  border-radius: var(--radius);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+}
+.bet-create-row input::placeholder { color: var(--text-light); }
+.bet-create-row input:focus { border-color: var(--gold); }
+.btn-sm {
+  background: var(--gold);
+  color: var(--green-deep);
+  border: none;
+  padding: 7px 12px;
+  border-radius: var(--radius);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.btn-sm:hover { background: var(--gold-light); }
+.btn-sm:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Bet cards */
+.bet-card {
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.bet-card:last-child { border-bottom: none; }
+
+/* Open/pending bet */
+.bet-open .bet-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.bet-challenger {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.bet-amount {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--gold);
+  background: rgba(201,168,76,0.1);
+  border: 1px solid rgba(201,168,76,0.2);
+  padding: 2px 8px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.bet-challenge-text {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  margin-top: 4px;
+  font-style: italic;
+}
+.bet-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.btn-accept {
+  background: rgba(92,184,92,0.15);
+  border: 1px solid rgba(92,184,92,0.4);
+  color: #5cb85c;
+  padding: 4px 12px;
+  border-radius: 2px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.btn-accept:hover { background: rgba(92,184,92,0.25); }
+.btn-cancel {
+  background: none;
+  border: 1px solid rgba(192,57,43,0.3);
+  color: rgba(192,57,43,0.7);
+  padding: 4px 12px;
+  border-radius: 2px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.btn-cancel:hover { background: rgba(192,57,43,0.1); }
+
+/* Active bet matchup */
+.bet-matchup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bet-player {
+  flex: 1;
+  text-align: center;
+  padding: 6px 4px;
+  border-radius: var(--radius);
+}
+.bet-player-name {
+  font-size: 0.82rem;
+  font-weight: 500;
+  display: block;
+}
+.bet-player-pos {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--text-light);
+  display: block;
+  margin-top: 2px;
+}
+.bet-player.leading {
+  background: rgba(92,184,92,0.08);
+  border: 1px solid rgba(92,184,92,0.2);
+}
+.bet-player.leading .bet-player-pos { color: #5cb85c; }
+.bet-player.trailing {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.bet-vs {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--text-light);
+  flex-shrink: 0;
+}
+.bet-amount-row {
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* Settled bet */
+.bet-player.winner {
+  background: rgba(201,168,76,0.08);
+  border: 1px solid rgba(201,168,76,0.25);
+}
+.bet-player.winner .bet-player-name { color: var(--gold-light); }
+.bet-player.winner .bet-player-pos { color: var(--gold); }
+.bet-player.loser {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  opacity: 0.5;
+}
+.bet-result {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: center;
+  margin-top: 6px;
+  padding: 3px 0;
+}
+.bet-result.won { color: var(--gold); }
+.bet-result.push { color: var(--text-light); }
+
+/* CHALLENGES TAB — mobile only */
+.tab.challenges-tab { display: none; }
+@media (max-width: 768px) {
+  .tab.challenges-tab { display: inline-flex; }
+}
