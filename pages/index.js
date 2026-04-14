@@ -426,7 +426,7 @@ export default function Home() {
     .filter((p) => p.name.toLowerCase().includes(searchQ.toLowerCase()))
     .slice(0, 20);
 
-  const teams = s?.draftComplete ? buildTeams(s) : [];
+  const teams = s?.draftComplete ? buildTeams(s, s.previousRankings) : [];
 
   const tournamentComplete =
     s?.draftComplete &&
@@ -892,17 +892,36 @@ export default function Home() {
                           className={`team-card ${rank === 0 ? "leader" : ""}`}
                         >
                           <div className="team-header">
-                            <span
-                              className={`team-rank ${rank === 0 ? "gold" : ""}`}
-                            >
-                              {team.displayPos}
-                            </span>
-                            <span className="team-name">{team.name}</span>
-                            <span
-                              className={`team-total ${scoreClass(team.teamTotal)}`}
-                            >
-                              {fmtScore(team.teamTotal)}
-                            </span>
+                            <div
+                              className={`move-pip ${team.movement > 0 ? "up" : team.movement < 0 ? "down" : ""}`}
+                            />
+                            <div className="team-header-inner">
+                              <div className="rank-group">
+                                <span
+                                  className={`team-rank ${rank === 0 ? "gold" : ""}`}
+                                >
+                                  {team.displayPos}
+                                </span>
+                                {team.movement !== 0 && (
+                                  <span
+                                    className={`move-indicator ${team.movement > 0 ? "up" : "down"}`}
+                                  >
+                                    {team.movement > 0
+                                      ? `▲${team.movement}`
+                                      : `▼${Math.abs(team.movement)}`}
+                                  </span>
+                                )}
+                                {team.movement === 0 && (
+                                  <span className="move-indicator same">–</span>
+                                )}
+                              </div>
+                              <span className="team-name">{team.name}</span>
+                              <span
+                                className={`team-total ${scoreClass(team.teamTotal)}`}
+                              >
+                                {fmtScore(team.teamTotal)}
+                              </span>
+                            </div>
                           </div>
                           <div className="team-golfers">
                             {team.golfers.map((g) => (
@@ -1045,7 +1064,7 @@ export default function Home() {
 }
 
 // ── team scoring logic ────────────────────────────────────────────────────────
-function buildTeams(s) {
+function buildTeams(s, previousRankings = {}) {
   const teams = s.drafters.map((name, idx) => {
     const golfers = s.picks
       .filter((p) => p.drafterIndex === idx)
@@ -1108,6 +1127,11 @@ function buildTeams(s) {
         .length > 1;
     t.displayPos =
       t.teamTotal === null ? "–" : tied ? `T${t.position}` : `${t.position}`;
+    const prev = previousRankings?.[t.name];
+    t.movement =
+      prev != null && t.position != null && typeof t.position === "number"
+        ? prev - t.position
+        : 0;
   }
 
   return sorted;

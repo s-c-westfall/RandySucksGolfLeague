@@ -6,6 +6,34 @@
 
 import { sql, ensureTable } from '../../lib/db';
 
+function computeRankings(state) {
+  if (!state.draftComplete || !state.picks?.length) return {};
+  const teamMap = {};
+  (state.picks || []).forEach(pick => {
+    const name = state.drafters[pick.drafterIndex];
+    if (!teamMap[name]) teamMap[name] = [];
+    const sc = state.scores?.[pick.playerId];
+    teamMap[name].push(sc?.total ?? 0);
+  });
+  const teams = Object.entries(teamMap).map(([name, scores]) => {
+    const sorted = [...scores].sort((a, b) => a - b);
+    const total = sorted.slice(0, 2).reduce((s, v) => s + v, 0);
+    return { name, total };
+  });
+  teams.sort((a, b) => a.total - b.total);
+  const rankings = {};
+  let pos = 1;
+  for (let i = 0; i < teams.length; i++) {
+    if (i > 0 && teams[i].total === teams[i - 1].total) {
+      rankings[teams[i].name] = rankings[teams[i - 1].name];
+    } else {
+      rankings[teams[i].name] = pos;
+    }
+    pos++;
+  }
+  return rankings;
+}
+
 const DEFAULT_STATE = {
   configured: false,
   tournId: '',
@@ -185,9 +213,11 @@ export default async function handler(req, res) {
       }
 
       case 'updateScores': {
+        const previousRankings = computeRankings(state);
         const updated = {
           ...state,
           scores: payload.scores,
+          previousRankings,
           lastRefreshed: new Date().toISOString(),
         };
         await setState(updated);

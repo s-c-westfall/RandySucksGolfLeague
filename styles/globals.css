@@ -312,11 +312,39 @@ input::placeholder { color: var(--text-light); }
 }
 .team-header {
   display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.team-header-inner {
+  display: flex;
   align-items: center;
   padding: 8px 14px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
   gap: 10px;
+  flex: 1;
 }
+.move-pip {
+  width: 3px;
+  flex-shrink: 0;
+  border-radius: 2px 0 0 0;
+  background: transparent;
+  transition: background 0.3s;
+}
+.move-pip.up   { background: #5cb85c; }
+.move-pip.down { background: var(--cut); }
+.rank-group {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 44px;
+}
+.move-indicator {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 500;
+}
+.move-indicator.up   { color: #5cb85c; }
+.move-indicator.down { color: var(--cut); }
+.move-indicator.same { color: var(--text-light); }
 .team-rank {
   font-family: 'Playfair Display', serif;
   font-size: 1.2rem;
