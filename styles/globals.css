@@ -899,3 +899,85 @@ select:focus-visible {
   .auth-card { padding: 28px 20px; }
   .auth-title { font-size: 1.2rem; }
 }
+
+/* TOURNAMENT SELECTOR */
+.tourn-selector {
+  position: relative;
+}
+.tourn-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+}
+.tourn-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--cream);
+  letter-spacing: -0.01em;
+}
+.tourn-chevron {
+  font-size: 0.7rem;
+  color: var(--gold);
+  margin-top: 2px;
+}
+.tourn-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 260px;
+  background: #1e351e;
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  z-index: 100;
+  animation: dropIn 0.15s ease;
+}
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.tourn-dropdown-section {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-light);
+  padding: 10px 14px 4px;
+}
+.tourn-dropdown-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background 0.15s;
+}
+.tourn-dropdown-item:hover { background: rgba(255,255,255,0.04); }
+.tourn-dropdown-item.active { border-left-color: var(--gold); background: rgba(201,168,76,0.06); }
+.tourn-dropdown-item.current { font-weight: 500; }
+.tourn-winner {
+  font-size: 0.75rem;
+  color: var(--gold);
+  margin-top: 2px;
+}
+.live-badge {
+  background: #2d5a1e;
+  color: #7ecf5a;
+  border-color: #4a8c30;
+}
+
+/* HISTORY BANNER */
+.history-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  border-left: 3px solid var(--gold);
+  background: rgba(201,168,76,0.06);
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}

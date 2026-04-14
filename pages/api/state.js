@@ -5,6 +5,7 @@
 // DELETE /api/state        → resets league (commissioner only)
 
 import { sql, ensureTable } from '../../lib/db';
+import { buildTeams } from '../../lib/scoring';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
 
@@ -81,8 +82,82 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: 'Only the commissioner can reset the league.' });
       }
       await ensureTable();
+
+      // Archive current state before deleting, if the draft is complete
+      let archived = false;
+      const currentState = await getState();
+
+      if (currentState.draftComplete && currentState.picks?.length > 0) {
+        try {
+          const teams = buildTeams(currentState, {});
+          const winner = teams[0];
+          const winnerName = winner?.name || null;
+
+          // Look up winner_user_id by name (nullable — don't fail if not found)
+          let winnerUserId = null;
+          if (winnerName) {
+            const userRows = await sql`SELECT id FROM users WHERE name = ${winnerName} LIMIT 1`;
+            winnerUserId = userRows[0]?.id || null;
+          }
+
+          // Insert into tournaments
+          const tournRows = await sql`
+            INSERT INTO tournaments (tourn_id, name, year, completed_at, winner_name, winner_user_id)
+            VALUES (
+              ${currentState.tournId || ''},
+              ${currentState.tournamentName || 'Unknown Tournament'},
+              ${currentState.year || new Date().getFullYear().toString()},
+              now(),
+              ${winnerName},
+              ${winnerUserId}
+            )
+            RETURNING id
+          `;
+          const tournamentId = tournRows[0].id;
+
+          // Insert picks
+          const numDrafters = currentState.drafters.length;
+          for (const pick of currentState.picks) {
+            const drafterName = currentState.drafters[pick.drafterIndex] || '';
+            const round = numDrafters > 0
+              ? Math.floor(pick.pickIndex / numDrafters) + 1
+              : 1;
+            // Look up user_id by drafter name (nullable)
+            const pickUserRows = await sql`SELECT id FROM users WHERE name = ${drafterName} LIMIT 1`;
+            const pickUserId = pickUserRows[0]?.id || null;
+            await sql`
+              INSERT INTO tournament_picks (tournament_id, user_id, drafter_name, player_id, player_name, pick_index, round)
+              VALUES (${tournamentId}, ${pickUserId}, ${drafterName}, ${pick.playerId}, ${pick.name}, ${pick.pickIndex}, ${round})
+            `;
+          }
+
+          // Insert standings
+          for (const team of teams) {
+            const standUserRows = await sql`SELECT id FROM users WHERE name = ${team.name} LIMIT 1`;
+            const standUserId = standUserRows[0]?.id || null;
+            const positionNum = typeof team.position === 'number' ? team.position : null;
+            await sql`
+              INSERT INTO tournament_standings (tournament_id, user_id, drafter_name, position, display_position, team_total, golfer_scores)
+              VALUES (
+                ${tournamentId},
+                ${standUserId},
+                ${team.name},
+                ${positionNum},
+                ${team.displayPos || null},
+                ${team.teamTotal},
+                ${JSON.stringify(team.golfers)}::jsonb
+              )
+            `;
+          }
+
+          archived = true;
+        } catch (archiveErr) {
+          console.error('Archive failed (proceeding with reset):', archiveErr);
+        }
+      }
+
       await sql`DELETE FROM league_state WHERE id = 1`;
-      return res.status(200).json({ ok: true });
+      return res.status(200).json({ ok: true, archived });
     }
 
     // POST mutations

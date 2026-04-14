@@ -397,6 +397,13 @@ export default function Home() {
   const [loadError, setLoadError] = useState(false);
   const [liveMsg, setLiveMsg] = useState("");
 
+  // Tournament history
+  const [viewingTournament, setViewingTournament] = useState(null); // null = live, id = history
+  const [pastTournaments, setPastTournaments] = useState([]);
+  const [historyData, setHistoryData] = useState(null);
+  const [tournDropdownOpen, setTournDropdownOpen] = useState(false);
+  const tournSelectorRef = useRef(null);
+
   // Derived from session
   const myName = session?.user?.name || "";
   const isCommissioner = session?.user?.isCommissioner || false;
@@ -422,6 +429,10 @@ export default function Home() {
           if (data.draftComplete) setTab("scores");
         })
         .catch(() => setLoadError(true));
+      fetch("/api/history")
+        .then((r) => r.json())
+        .then((data) => Array.isArray(data) && setPastTournaments(data))
+        .catch(() => {});
     }
   }, [status]);
 
@@ -669,6 +680,11 @@ export default function Home() {
       setSchedule(null);
       setS(await stateGet());
       setTab("draft");
+      // Refresh past tournaments list after archiving
+      fetch("/api/history")
+        .then((r) => r.json())
+        .then((data) => Array.isArray(data) && setPastTournaments(data))
+        .catch(() => {});
     });
 
   // scroll highlighted result into view
@@ -680,6 +696,26 @@ export default function Home() {
       }
     }
   }, [highlightIndex]);
+
+  // Close tournament dropdown on outside click
+  useEffect(() => {
+    function handleClick(e) {
+      if (tournSelectorRef.current && !tournSelectorRef.current.contains(e.target)) {
+        setTournDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  // Fetch history detail when viewingTournament changes
+  useEffect(() => {
+    if (!viewingTournament) { setHistoryData(null); return; }
+    fetch(`/api/history?id=${viewingTournament}`)
+      .then((r) => r.json())
+      .then(setHistoryData)
+      .catch(() => {});
+  }, [viewingTournament]);
 
   // ── Render: loading spinner while session loads ──
   if (status === "loading") {
@@ -762,7 +798,47 @@ export default function Home() {
       </Head>
 
       <header>
-        <div className="logo">{s?.tournamentName || "The Masters"}</div>
+        <div className="tourn-selector" ref={tournSelectorRef}>
+          <button className="tourn-btn" onClick={() => setTournDropdownOpen((o) => !o)}>
+            <span className="tourn-name">
+              {viewingTournament && historyData
+                ? `${historyData.tournament.name} — ${historyData.tournament.year}`
+                : s?.tournamentName || "Golf League"}
+            </span>
+            <span className="tourn-chevron">{tournDropdownOpen ? "▲" : "▼"}</span>
+          </button>
+          {tournDropdownOpen && (
+            <div className="tourn-dropdown">
+              <div className="tourn-dropdown-section">Current</div>
+              <div
+                className={`tourn-dropdown-item current ${!viewingTournament ? "active" : ""}`}
+                onClick={() => { setViewingTournament(null); setTournDropdownOpen(false); }}
+              >
+                <span>{s?.tournamentName || "—"}</span>
+                <span className="badge live-badge">LIVE</span>
+              </div>
+              {pastTournaments.length > 0 && (
+                <>
+                  <div className="tourn-dropdown-section">Past Tournaments</div>
+                  {pastTournaments.map((t) => (
+                    <div
+                      key={t.id}
+                      className={`tourn-dropdown-item ${viewingTournament === t.id ? "active" : ""}`}
+                      onClick={() => { setViewingTournament(t.id); setTournDropdownOpen(false); }}
+                    >
+                      <div>
+                        <div>{t.name} — {t.year}</div>
+                        {t.winner_name && (
+                          <div className="tourn-winner">Won by {t.winner_name}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
+        </div>
         <div className="header-right">
           {myName && (
             <span className="badge dim">
@@ -805,6 +881,77 @@ export default function Home() {
       </header>
 
       <main id="main-content">
+        {/* ── HISTORY VIEW ── */}
+        {viewingTournament && historyData && (() => {
+          const { tournament, standings, picks } = historyData;
+          // Build teams from standings + picks for the scoreboard
+          const historyTeams = (standings || []).map((st) => {
+            const teamPicks = (picks || []).filter((p) => p.drafter_name === st.drafter_name);
+            const golfers = st.golfer_scores || teamPicks.map((p) => ({
+              name: p.player_name,
+              playerId: p.player_id,
+              total: null,
+              cut: false,
+              counting: false,
+              thru: "F",
+              pos: "–",
+            }));
+            return {
+              name: st.drafter_name,
+              position: st.position,
+              displayPos: st.display_position || (st.position ? `${st.position}` : "–"),
+              teamTotal: st.team_total,
+              golfers,
+            };
+          });
+
+          return (
+            <>
+              <div className="history-banner">
+                <span className="badge">ARCHIVED</span>
+                <span>{tournament.name} {tournament.year} — Final Standings</span>
+                <button className="btn-ghost" onClick={() => setViewingTournament(null)}>← Back to Live</button>
+              </div>
+              <div className="scoreboard">
+                {historyTeams.map((team, rank) => (
+                  <div key={team.name} className={`team-card ${rank === 0 ? "leader" : ""}`}>
+                    <div className="team-header">
+                      <div className="team-header-inner">
+                        <div className="rank-group">
+                          <span className={`team-rank ${rank === 0 ? "gold" : ""}`}>
+                            {team.displayPos}
+                          </span>
+                        </div>
+                        <span className="team-name">{team.name}</span>
+                        <span className={`team-total ${scoreClass(team.teamTotal)}`}>
+                          {fmtScore(team.teamTotal)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="team-golfers">
+                      {(team.golfers || []).map((g, gi) => (
+                        <div key={g.playerId || gi} className="golfer-row">
+                          <span className={`golfer-name ${g.counting ? "counting" : "nc"}`}>
+                            {g.name}
+                            {g.counting && <span className="star" aria-hidden="true">★</span>}
+                            {!g.counting && <span className="ex" aria-hidden="true">✕</span>}
+                          </span>
+                          <span className={`golfer-score ${g.cut ? "" : scoreClass(g.total)}`}>
+                            {g.cut ? "–" : fmtScore(g.total)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          );
+        })()}
+
+        {/* ── LIVE VIEW (hidden when viewing history) ── */}
+        {!viewingTournament && <>
+
         {/* ── SETUP: Tournament Picker ── */}
         {!s.configured && (
           <div className="panel">
@@ -1334,6 +1481,9 @@ export default function Home() {
             )}
           </>
         )}
+
+        {/* end live view */}
+        </>}
       </main>
     </>
   );
