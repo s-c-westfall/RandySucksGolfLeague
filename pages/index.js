@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
+import { useSession, signIn, signOut } from "next-auth/react";
 
 const PICKS_PER_DRAFTER = 3;
 const CURRENT_YEAR = new Date().getFullYear().toString();
@@ -53,26 +54,6 @@ function scoreClass(n) {
   return "even";
 }
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
-function getSecret() {
-  if (typeof window === "undefined") return "";
-  return sessionStorage.getItem("league_secret") || "";
-}
-
-// ── Identity ─────────────────────────────────────────────────────────────────
-function getMyName() {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem("drafter_name") || "";
-}
-
-function saveMyName(name) {
-  localStorage.setItem("drafter_name", name);
-}
-
-function clearMyName() {
-  localStorage.removeItem("drafter_name");
-}
-
 // ── API calls ─────────────────────────────────────────────────────────────────
 async function apiGet(path, params = {}) {
   const qs = new URLSearchParams({ path, ...params }).toString();
@@ -86,7 +67,6 @@ async function statePost(action, payload = {}) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-league-secret": getSecret(),
     },
     body: JSON.stringify({ action, payload }),
   });
@@ -107,32 +87,301 @@ async function stateGet() {
 async function stateDelete() {
   const res = await fetch("/api/state", {
     method: "DELETE",
-    headers: { "x-league-secret": getSecret() },
+    headers: { "Content-Type": "application/json" },
   });
   if (res.status === 401) throw new Error("AUTH_REQUIRED");
   if (!res.ok) throw new Error(`State API ${res.status}`);
   return res.json();
 }
 
+// ── Auth Screen ───────────────────────────────────────────────────────────────
+function AuthScreen() {
+  const [authTab, setAuthTab] = useState("login");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+
+  // Login form state
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+
+  // Register form state
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regVenmo, setRegVenmo] = useState("");
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    setErr("");
+    try {
+      const result = await signIn("credentials", {
+        email: loginEmail,
+        password: loginPassword,
+        redirect: false,
+      });
+      if (result?.error) {
+        setErr("Invalid email or password.");
+      }
+    } catch {
+      setErr("Something went wrong. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    setErr("");
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: regName,
+          email: regEmail,
+          password: regPassword,
+          venmoHandle: regVenmo,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErr(data.error || "Registration failed. Please try again.");
+        return;
+      }
+      // Auto-login after successful registration
+      const result = await signIn("credentials", {
+        email: regEmail,
+        password: regPassword,
+        redirect: false,
+      });
+      if (result?.error) {
+        setSuccessMsg("Account created! Please sign in.");
+        setAuthTab("login");
+        setLoginEmail(regEmail);
+      }
+    } catch {
+      setErr("Something went wrong. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Password strength
+  const getStrength = (pw) => {
+    let score = 0;
+    if (pw.length >= 8) score++;
+    if (pw.length >= 12) score++;
+    if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+    if (/\d/.test(pw) || /[^a-zA-Z0-9]/.test(pw)) score++;
+    return score;
+  };
+  const strengthScore = getStrength(regPassword);
+  const strengthClass = strengthScore <= 1 ? "weak" : strengthScore <= 2 ? "medium" : "strong";
+
+  return (
+    <>
+      <Head>
+        <title>Sign In — Golf League</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap"
+          rel="stylesheet"
+        />
+      </Head>
+
+      <header>
+        <div className="logo">Randy Sucks Golf League</div>
+      </header>
+
+      <div className="auth-container">
+        <div className="auth-card">
+          {/* Tab switcher */}
+          <div className="auth-tabs">
+            <button
+              className={`auth-tab ${authTab === "login" ? "active" : ""}`}
+              onClick={() => { setAuthTab("login"); setErr(""); setSuccessMsg(""); }}
+            >
+              Log In
+            </button>
+            <button
+              className={`auth-tab ${authTab === "register" ? "active" : ""}`}
+              onClick={() => { setAuthTab("register"); setErr(""); setSuccessMsg(""); }}
+            >
+              Create Account
+            </button>
+          </div>
+
+          {/* Success message */}
+          {successMsg && (
+            <div className="auth-success" role="status">{successMsg}</div>
+          )}
+
+          {/* Error message */}
+          {err && (
+            <div className="auth-error" role="alert">{err}</div>
+          )}
+
+          {/* LOGIN FORM */}
+          {authTab === "login" && (
+            <form onSubmit={handleLogin}>
+              <div className="auth-title">Welcome Back</div>
+              <div className="auth-subtitle">Sign in to your account</div>
+
+              <div className="form-group">
+                <label className="form-label">Email</label>
+                <input
+                  className="form-input"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Password</label>
+                <input
+                  className="form-input"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
+
+              <button className="btn-auth-primary" type="submit" disabled={busy}>
+                {busy ? "Signing in…" : "Sign In"}
+              </button>
+
+              <div className="auth-switch">
+                <span>No account? </span>
+                <button
+                  type="button"
+                  className="auth-link"
+                  onClick={() => { setAuthTab("register"); setErr(""); }}
+                >
+                  Create one
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* REGISTER FORM */}
+          {authTab === "register" && (
+            <form onSubmit={handleRegister}>
+              <div className="auth-title">Join the League</div>
+              <div className="auth-subtitle">Create your account</div>
+
+              <div className="form-group">
+                <label className="form-label">Display Name</label>
+                <input
+                  className="form-input"
+                  type="text"
+                  placeholder="How you'll appear in drafts"
+                  value={regName}
+                  onChange={(e) => setRegName(e.target.value)}
+                  required
+                  autoComplete="name"
+                />
+                <div className="form-hint">This is the name shown on the draft board and scoreboard</div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Email</label>
+                <input
+                  className="form-input"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={regEmail}
+                  onChange={(e) => setRegEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Password</label>
+                <input
+                  className="form-input"
+                  type="password"
+                  placeholder="Minimum 8 characters"
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                />
+                {regPassword.length > 0 && (
+                  <div className="password-strength">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className={`strength-bar ${i <= strengthScore ? strengthClass : ""}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="auth-section-heading">Get Paid</div>
+
+              <div className="form-group">
+                <label className="form-label">Venmo Username</label>
+                <input
+                  className="form-input"
+                  type="text"
+                  placeholder="@your-venmo (optional)"
+                  value={regVenmo}
+                  onChange={(e) => setRegVenmo(e.target.value)}
+                  autoComplete="off"
+                />
+                <div className="form-hint">Venmo handle (optional) — for collecting your winnings</div>
+              </div>
+
+              <button className="btn-auth-primary" type="submit" disabled={busy}>
+                {busy ? "Creating account…" : "Create Account"}
+              </button>
+
+              <div className="auth-switch">
+                <span>Already have an account? </span>
+                <button
+                  type="button"
+                  className="auth-link"
+                  onClick={() => { setAuthTab("login"); setErr(""); }}
+                >
+                  Sign in
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function Home() {
+  const { data: session, status } = useSession();
+
   const [s, setS] = useState(null); // server state
   const [tab, setTab] = useState("draft");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [searchQ, setSearchQ] = useState("");
 
-  // identity
-  const [myName, setMyNameState] = useState("");
-
   // setup form
   const [schedule, setSchedule] = useState(null);
   const [selectedTournId, setSelectedTournId] = useState("");
-  const [creatorName, setCreatorName] = useState("");
   const [loadingSchedule, setLoadingSchedule] = useState(false);
 
   // lobby join
-  const [joinName, setJoinName] = useState("");
   const [addDrafterName, setAddDrafterName] = useState("");
 
   // commissioner
@@ -144,12 +393,13 @@ export default function Home() {
 
   const pollingRef = useRef(null);
   const refreshRef = useRef(null);
-  const passwordRef = useRef(null);
 
   const [loadError, setLoadError] = useState(false);
-  const [needsAuth, setNeedsAuth] = useState(false);
-  const [secretInput, setSecretInput] = useState("");
   const [liveMsg, setLiveMsg] = useState("");
+
+  // Derived from session
+  const myName = session?.user?.name || "";
+  const isCommissioner = session?.user?.isCommissioner || false;
 
   const wrap = async (fn) => {
     setBusy(true);
@@ -157,10 +407,6 @@ export default function Home() {
     try {
       await fn();
     } catch (e) {
-      if (e.message === "AUTH_REQUIRED") {
-        setNeedsAuth(true);
-        return;
-      }
       setErr(e.message);
     } finally {
       setBusy(false);
@@ -169,27 +415,15 @@ export default function Home() {
 
   // initial load
   useEffect(() => {
-    stateGet()
-      .then((data) => {
-        setS(data);
-        if (data.draftComplete) setTab("scores");
-      })
-      .catch(() => setLoadError(true));
-    setMyNameState(getMyName());
-  }, []);
-
-  // clear stale identity if name not in drafters list (unless commissioner)
-  useEffect(() => {
-    if (
-      s &&
-      myName &&
-      !s.drafters.includes(myName) &&
-      s.commissionerName !== myName
-    ) {
-      clearMyName();
-      setMyNameState("");
+    if (status === "authenticated") {
+      stateGet()
+        .then((data) => {
+          setS(data);
+          if (data.draftComplete) setTab("scores");
+        })
+        .catch(() => setLoadError(true));
     }
-  }, [s, myName]);
+  }, [status]);
 
   // auto-fetch schedule on mount (for setup)
   useEffect(() => {
@@ -218,14 +452,9 @@ export default function Home() {
     return () => clearInterval(pollingRef.current);
   }, [s?.draftComplete]);
 
-  // focus password input when auth is required
-  useEffect(() => {
-    if (needsAuth && passwordRef.current) passwordRef.current.focus();
-  }, [needsAuth]);
-
   // derived identity
   const isCreator =
-    myName && (s?.creator === myName || s?.commissionerName === myName);
+    myName && (s?.creator === myName || isCommissioner);
   const isJoined = myName && s?.drafters?.includes(myName);
   const currentDrafterIdx =
     s?.draftOrder?.length > 0 ? s.draftOrder[s.currentPickIndex] : null;
@@ -256,8 +485,8 @@ export default function Home() {
 
   const loadTournament = () =>
     wrap(async () => {
-      if (!selectedTournId || !creatorName.trim())
-        throw new Error("Select a tournament and enter your name.");
+      if (!selectedTournId)
+        throw new Error("Select a tournament.");
       const selectedTourn = schedule?.find(
         (t) => (t.tournId || t.id) === selectedTournId,
       );
@@ -287,29 +516,19 @@ export default function Home() {
         year: CURRENT_YEAR,
         tournamentName: tournName,
         field,
-        creator: creatorName.trim(),
       });
-      saveMyName(creatorName.trim());
-      setMyNameState(creatorName.trim());
       setS(updated);
     });
 
   const joinDraft = () =>
     wrap(async () => {
-      const name = joinName.trim();
-      if (!name) throw new Error("Enter your name.");
-      const u = await statePost("joinDraft", { name });
-      saveMyName(name);
-      setMyNameState(name);
-      setJoinName("");
+      const u = await statePost("joinDraft", {});
       setS(u);
     });
 
   const leaveDraft = () =>
     wrap(async () => {
-      const u = await statePost("leaveDraft", { name: myName });
-      clearMyName();
-      setMyNameState("");
+      const u = await statePost("leaveDraft", {});
       setS(u);
     });
 
@@ -317,7 +536,7 @@ export default function Home() {
     wrap(async () => {
       const name = addDrafterName.trim();
       if (!name) throw new Error("Enter a name.");
-      const u = await statePost("addDrafter", { name, creatorName: myName });
+      const u = await statePost("addDrafter", { name });
       setAddDrafterName("");
       setS(u);
     });
@@ -326,7 +545,6 @@ export default function Home() {
     wrap(async () => {
       if (!assignDrafter) throw new Error("Select a drafter first.");
       const u = await statePost("assignGolfer", {
-        creatorName: myName,
         drafterName: assignDrafter,
         playerId,
         playerName,
@@ -342,7 +560,6 @@ export default function Home() {
       const draftOrder = buildSnakeOrder(s.drafters.length, PICKS_PER_DRAFTER);
       const u = await statePost("startDraft", {
         draftOrder,
-        creatorName: myName,
       });
       setS(u);
       setTab("draft");
@@ -362,11 +579,10 @@ export default function Home() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-league-secret": getSecret(),
         },
         body: JSON.stringify({
           action: "makePick",
-          payload: { pick, drafterName: myName },
+          payload: { pick },
         }),
       });
       if (res.status === 401) throw new Error("AUTH_REQUIRED");
@@ -450,8 +666,6 @@ export default function Home() {
     wrap(async () => {
       if (!confirm("Reset all league data? This cannot be undone.")) return;
       await stateDelete();
-      clearMyName();
-      setMyNameState("");
       setSchedule(null);
       setS(await stateGet());
       setTab("draft");
@@ -466,6 +680,37 @@ export default function Home() {
       }
     }
   }, [highlightIndex]);
+
+  // ── Render: loading spinner while session loads ──
+  if (status === "loading") {
+    return <div className="loading">Loading...</div>;
+  }
+
+  // ── Render: auth screen when not logged in ──
+  if (status === "unauthenticated") {
+    return <AuthScreen />;
+  }
+
+  // ── Render: load error ──
+  if (loadError)
+    return (
+      <div className="loading">
+        <p>Failed to connect to the server.</p>
+        <button
+          className="btn"
+          onClick={() => {
+            setLoadError(false);
+            stateGet()
+              .then(setS)
+              .catch(() => setLoadError(true));
+          }}
+        >
+          Retry
+        </button>
+      </div>
+    );
+
+  if (!s) return <div className="loading">Loading...</div>;
 
   // ── derived ──
   const lastPickIndex = (s?.currentPickIndex ?? 0) - 1;
@@ -493,70 +738,6 @@ export default function Home() {
       );
     });
 
-  // ── render ──
-  const handleLogin = async () => {
-    setBusy(true);
-    setErr("");
-    try {
-      const res = await fetch("/api/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ secret: secretInput }),
-      });
-      if (!res.ok) {
-        setErr("Wrong password.");
-        return;
-      }
-      sessionStorage.setItem("league_secret", secretInput);
-      setNeedsAuth(false);
-      setSecretInput("");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  if (needsAuth)
-    return (
-      <div className="loading">
-        <h2>League Password</h2>
-        <p>Enter the league password to make changes.</p>
-        <div className="row-gap" style={{ marginTop: 12 }}>
-          <input
-            ref={passwordRef}
-            type="password"
-            aria-label="League password"
-            value={secretInput}
-            onChange={(e) => setSecretInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-            placeholder="Password..."
-          />
-          <button className="btn" onClick={handleLogin} disabled={busy}>
-            Enter
-          </button>
-        </div>
-        {err && <div className="error" role="alert">{err}</div>}
-      </div>
-    );
-
-  if (loadError)
-    return (
-      <div className="loading">
-        <p>Failed to connect to the server.</p>
-        <button
-          className="btn"
-          onClick={() => {
-            setLoadError(false);
-            stateGet()
-              .then(setS)
-              .catch(() => setLoadError(true));
-          }}
-        >
-          Retry
-        </button>
-      </div>
-    );
-  if (!s) return <div className="loading">Loading...</div>;
-
   // App phases
   const inLobby = s.configured && !s.draftOrder?.length;
   const inDraft = s.draftOrder?.length > 0 && !s.draftComplete;
@@ -583,7 +764,14 @@ export default function Home() {
       <header>
         <div className="logo">{s?.tournamentName || "The Masters"}</div>
         <div className="header-right">
-          {myName && <span className="badge dim">{myName}</span>}
+          {myName && (
+            <span className="badge dim">
+              {myName}
+              {isCommissioner && (
+                <span className="commissioner-star" title="Commissioner" aria-label="Commissioner">★</span>
+              )}
+            </span>
+          )}
           {s.lastRefreshed && (
             <span className="badge dim timestamp">
               ↻{" "}
@@ -602,52 +790,21 @@ export default function Home() {
               ↻<span className="refresh-label"> Refresh</span>
             </button>
           )}
-          <button className="btn-ghost danger" onClick={reset}>
-            Reset
+          {isCreator && (
+            <button className="btn-ghost danger" onClick={reset}>
+              Reset
+            </button>
+          )}
+          <button
+            className="btn-ghost"
+            onClick={() => signOut()}
+          >
+            Log out
           </button>
         </div>
       </header>
 
       <main id="main-content">
-        {/* ── IDENTIFY: prompt for name when not recognized ── */}
-        {!myName &&
-          !isCreator &&
-          s.configured &&
-          (s.draftOrder?.length > 0 || s.draftComplete) && (
-            <div className="panel">
-              <h2>Who are you?</h2>
-              <div className="field">
-                <label>Enter your name to continue</label>
-                <div className="row-gap">
-                  <input
-                    value={joinName}
-                    onChange={(e) => setJoinName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && joinName.trim()) {
-                        saveMyName(joinName.trim());
-                        setMyNameState(joinName.trim());
-                        setJoinName("");
-                      }
-                    }}
-                    placeholder="Your name..."
-                  />
-                  <button
-                    className="btn"
-                    onClick={() => {
-                      if (joinName.trim()) {
-                        saveMyName(joinName.trim());
-                        setMyNameState(joinName.trim());
-                        setJoinName("");
-                      }
-                    }}
-                  >
-                    Go
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
         {/* ── SETUP: Tournament Picker ── */}
         {!s.configured && (
           <div className="panel">
@@ -682,19 +839,10 @@ export default function Home() {
                   </select>
                 </div>
 
-                <div className="field" style={{ marginBottom: 12 }}>
-                  <label>Your Name</label>
-                  <input
-                    value={creatorName}
-                    onChange={(e) => setCreatorName(e.target.value)}
-                    placeholder="Enter your name..."
-                  />
-                </div>
-
                 <button
                   className="btn"
                   onClick={loadTournament}
-                  disabled={busy || !selectedTournId || !creatorName.trim()}
+                  disabled={busy || !selectedTournId}
                 >
                   Create League
                 </button>
@@ -748,18 +896,15 @@ export default function Home() {
 
               {!isJoined && (
                 <div className="field" style={{ marginTop: 16 }}>
-                  <label>Join the Draft</label>
-                  <div className="row-gap">
-                    <input
-                      value={joinName}
-                      onChange={(e) => setJoinName(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && joinDraft()}
-                      placeholder="Your name..."
-                    />
-                    <button className="btn" onClick={joinDraft} disabled={busy}>
-                      Join
-                    </button>
-                  </div>
+                  <button className="btn" onClick={joinDraft} disabled={busy}>
+                    Join as {myName}
+                  </button>
+                </div>
+              )}
+
+              {isJoined && !isCreator && (
+                <div className="empty-state" style={{ marginTop: 12 }}>
+                  You&apos;re in! Waiting for {s.creator} to start the draft...
                 </div>
               )}
 
@@ -799,12 +944,6 @@ export default function Home() {
               {isCreator && s.drafters.length < 2 && (
                 <div className="empty-state" style={{ marginTop: 12 }}>
                   Waiting for more drafters to join...
-                </div>
-              )}
-
-              {isJoined && !isCreator && (
-                <div className="empty-state" style={{ marginTop: 12 }}>
-                  Waiting for {s.creator} to start the draft...
                 </div>
               )}
             </div>
