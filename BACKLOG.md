@@ -1070,7 +1070,7 @@ Render above the scoreboard when `tournamentComplete` is true:
 
 ---
 
-## 9. Pull to Refresh on Mobile
+## 9. Pull to Refresh on Mobile ✅ COMPLETED
 
 ### Problem
 On mobile, the only ways to refresh scores are: the "↻ Refresh" button in the sticky header (small tap target, easy to miss) or waiting for the 2-minute auto-poll. Native apps train users to pull down for fresh data — the absence of this gesture makes the app feel like a website rather than an experience.

@@ -48,9 +48,9 @@ Add Venmo deep link to the existing champion banner so losers can pay the winner
 
 ---
 
-## Wave 5 — Polish
+## Wave 5 — Polish ✅ COMPLETE
 
-### Pull to refresh on mobile
+### Pull to refresh on mobile ✅
 Native pull-to-refresh gesture for score/state updates. *(Backlog #9)*
 
 ---
@@ -65,4 +65,4 @@ See [BACKLOG.md — Development Instructions](BACKLOG.md#development-instruction
 | ~~2~~ | ~~#1 (+#10)~~ | ✅ Complete |
 | ~~3~~ | ~~#6~~ | ✅ Complete |
 | ~~4~~ | ~~#7, #8~~ | ✅ Complete |
-| 5 | #9 | Pull to refresh (polish) |
+| ~~5~~ | ~~#9~~ | ✅ Complete |
