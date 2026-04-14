@@ -1238,3 +1238,27 @@ select:focus-visible {
 @media (max-width: 768px) {
   .tab.challenges-tab { display: inline-flex; }
 }
+
+/* PULL TO REFRESH */
+.pull-indicator {
+  text-align: center;
+  overflow: hidden;
+  transition: height 0.3s ease-out;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.pull-spinner {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+@media (min-width: 769px) {
+  .pull-indicator { display: none; }
+}

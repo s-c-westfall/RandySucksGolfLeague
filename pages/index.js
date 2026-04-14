@@ -394,6 +394,16 @@ export default function Home() {
   const pollingRef = useRef(null);
   const refreshRef = useRef(null);
 
+  // Pull-to-refresh
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+  const pullStartYRef = useRef(0);
+  const isPullRefreshingRef = useRef(false);
+  const busyRef = useRef(false);
+  const mainRef = useRef(null);
+  const pullThreshold = 60;
+  const pullMax = 80;
+
   const [loadError, setLoadError] = useState(false);
   const [liveMsg, setLiveMsg] = useState("");
 
@@ -428,6 +438,58 @@ export default function Home() {
       setBusy(false);
     }
   };
+
+  // Keep refs in sync for passive touch handler
+  useEffect(() => { isPullRefreshingRef.current = isPullRefreshing; }, [isPullRefreshing]);
+  useEffect(() => { busyRef.current = busy; }, [busy]);
+
+  // Ref to track whether tournament is complete (avoids stale closure in polling effect)
+  const tournamentCompleteRef = useRef(false);
+
+  // Pull-to-refresh touch handlers
+  const handleTouchStart = (e) => {
+    if (window.scrollY !== 0 || isPullRefreshingRef.current || busyRef.current) return;
+    pullStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMovePassive = (e) => {
+    if (window.scrollY !== 0 || isPullRefreshingRef.current || busyRef.current || !pullStartYRef.current) return;
+    const delta = e.touches[0].clientY - pullStartYRef.current;
+    if (delta > 0) {
+      e.preventDefault();
+      setPullDistance(Math.min(delta, pullMax));
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (pullDistance >= pullThreshold) {
+      setIsPullRefreshing(true);
+      setPullDistance(0);
+      try {
+        if (s?.draftComplete) {
+          await refreshScores();
+        } else {
+          setS(await stateGet());
+        }
+      } finally {
+        setIsPullRefreshing(false);
+      }
+      if (navigator.vibrate) navigator.vibrate(10);
+    } else {
+      setPullDistance(0);
+    }
+    pullStartYRef.current = 0;
+  };
+
+  // Register passive:false touchmove on main element
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const onMove = (e) => handleTouchMovePassive(e);
+    el.addEventListener('touchmove', onMove, { passive: false });
+    return () => el.removeEventListener('touchmove', onMove);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPullRefreshing, busy, pullStartYRef]);
 
   const fetchChallenges = async (tournId) => {
     if (!tournId) return;
@@ -476,13 +538,14 @@ export default function Home() {
     }
   }, [s?.configured, s?.draftComplete, s?.currentPickIndex]);
 
-  // auto-refresh scores every 2 min when draft complete
+  // auto-refresh scores every 2 min when draft complete and tournament still ongoing
+  // Uses tournamentCompleteRef to avoid stale closure (ref is updated after tournamentComplete is derived)
   useEffect(() => {
-    if (s?.draftComplete) {
+    if (s?.draftComplete && !tournamentCompleteRef.current) {
       pollingRef.current = setInterval(() => refreshRef.current?.(), 120_000);
     }
     return () => clearInterval(pollingRef.current);
-  }, [s?.draftComplete]);
+  }, [s?.draftComplete, s?.scores]);
 
   // derived identity
   const isCreator =
@@ -869,6 +932,9 @@ export default function Home() {
       );
     });
 
+  // Keep ref in sync so polling useEffect can read the latest value
+  tournamentCompleteRef.current = tournamentComplete;
+
   // App phases
   const inLobby = s.configured && !s.draftOrder?.length;
   const inDraft = s.draftOrder?.length > 0 && !s.draftComplete;
@@ -943,24 +1009,6 @@ export default function Home() {
               )}
             </span>
           )}
-          {s.lastRefreshed && (
-            <span className="badge dim timestamp">
-              ↻{" "}
-              {new Date(s.lastRefreshed).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-          )}
-          {draftDone && (
-            <button
-              className="btn-ghost"
-              onClick={refreshScores}
-              disabled={busy}
-            >
-              ↻<span className="refresh-label"> Refresh</span>
-            </button>
-          )}
           {isCreator && (
             <button className="btn-ghost danger" onClick={reset}>
               Reset
@@ -975,7 +1023,26 @@ export default function Home() {
         </div>
       </header>
 
-      <main id="main-content">
+      <main
+        id="main-content"
+        ref={mainRef}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Pull-to-refresh indicator */}
+        <div
+          className="pull-indicator"
+          style={{ height: isPullRefreshing ? 40 : pullDistance > 0 ? Math.min(pullDistance * 0.5, 40) : 0 }}
+        >
+          {isPullRefreshing ? (
+            <span className="pull-spinner">↻</span>
+          ) : pullDistance >= pullThreshold ? (
+            <span style={{ color: 'var(--gold)' }}>↻ Release to refresh</span>
+          ) : (
+            <span style={{ transform: `rotate(${(pullDistance / pullMax) * 360}deg)`, display: 'inline-block' }}>↻</span>
+          )}{!isPullRefreshing && (pullDistance >= pullThreshold ? ' Release to refresh' : pullDistance > 5 ? ' Pull to refresh' : '')}
+        </div>
+
         {/* ── HISTORY VIEW ── */}
         {viewingTournament && historyData && (() => {
           const { tournament, standings, picks } = historyData;
